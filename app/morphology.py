@@ -64,7 +64,7 @@ def analyze_word(token: str) -> dict[str, Any]:
                 "form": "sḏm.n.f-type",
                 "confidence": 0.85,
                 "subject": SUFFIX_PRONOUNS[segments[-1]],
-                "warning": "This pattern label is morphological. Final tense/aspect translation still depends on syntax, discourse and verb class.",
+                "warning": "This pattern label is morphological. Final tense/aspect translation still depends on syntax, discourse context and verb class.",
             }
         )
     elif len(segments) >= 2 and segments[-1] in SUFFIX_PRONOUNS:
