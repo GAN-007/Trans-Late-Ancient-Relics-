@@ -19,7 +19,11 @@ jobs:
           cat .bootstrap/payload.part* | base64 -d > /tmp/v2payload.tgz
           tar -xzf /tmp/v2payload.tgz -C .
           rm -rf .bootstrap
-          rm -f .github/workflows/bootstrap-v2.yml
+          # The job token can update repository content but GitHub deliberately
+          # blocks it from changing workflow files. Keep workflows byte-for-byte
+          # from the triggering commit; they are updated separately by the
+          # authenticated repository connector after this source commit lands.
+          git restore --source=HEAD -- .github/workflows
       - name: Validate source shape
         run: |
           python -m compileall -q app cli.py
