@@ -1,14 +1,22 @@
 services:
-  tutor:
+  relics:
     build: .
     ports:
       - "8000:8000"
     volumes:
-      - tutor_data:/app/data-runtime
+      - relics_data:/app/data-runtime
     environment:
-      - ESHB_ENV=production
-      - ESHB_RUNTIME_DIR=/app/data-runtime
+      ESHB_ENV: ${ESHB_ENV:-development}
+      ESHB_RUNTIME_DIR: /app/data-runtime
+      ESHB_SECURE_COOKIES: ${ESHB_SECURE_COOKIES:-false}
+      ESHB_AI_PROVIDER: ${ESHB_AI_PROVIDER:-openai}
+      ESHB_AI_MODEL: ${ESHB_AI_MODEL:-gpt-5.6}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ESHB_KNOWLEDGE_LOOP_ENABLED: ${ESHB_KNOWLEDGE_LOOP_ENABLED:-false}
+      ESHB_KNOWLEDGE_LOOP_HOURS: ${ESHB_KNOWLEDGE_LOOP_HOURS:-24}
+      ESHB_BOOTSTRAP_ADMIN_USERNAME: ${ESHB_BOOTSTRAP_ADMIN_USERNAME:-}
+      ESHB_BOOTSTRAP_ADMIN_PASSWORD: ${ESHB_BOOTSTRAP_ADMIN_PASSWORD:-}
     restart: unless-stopped
 
 volumes:
-  tutor_data:
+  relics_data:

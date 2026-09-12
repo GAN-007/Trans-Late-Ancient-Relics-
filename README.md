@@ -1,41 +1,157 @@
-# Trans-Late Ancient Relics — ESHB Ancient Egyptian Tutor
+# Trans-Late Ancient Relics
 
-This repository is a working educational system that keeps **two different jobs** separate:
+**Trans-Late Ancient Relics** is an Ancient Egyptian learning and translation platform built around a strict separation between:
 
-1. **ESHB** — a modern, reversible English/Swahili/IPA ↔ hieroglyphic bridge.
-2. **Middle Egyptian** — historical language learning: lexicon, grammar, transliteration, hieroglyphic signs, determinatives/phonetic-complement concepts, lessons and guarded translation.
+1. **ESHB** — a modern reversible bridge for English, Swahili and IPA using Egyptian hieroglyphic Unicode signs as an encoding layer; and
+2. **Middle Egyptian** — the historical language, where signs can be phonograms, logograms, determinatives or phonetic complements and where translation requires morphology, syntax and context.
 
-## Why the distinction matters
+Version **2.0** expands the original tutor into a multimodal, accessible platform with contextual translation, live camera capture, spoken interaction, an installable PWA shell, user roles and a human-reviewed AI knowledge loop.
 
-Ancient Egyptian hieroglyphic spelling is not an A–Z substitution cipher. It commonly records consonants, uses one-, two- and three-consonant signs, logograms/ideograms, phonetic complements and semantic determinatives. Vowels are normally omitted in hieroglyphic/hieratic Egyptian, so exact Middle Kingdom pronunciation is only partially reconstructable.
+## What v2 can do
 
-ESHB is intentionally modern. Its **strict form** places a separator between logical tokens so conversion is algorithmically reversible. Its display form is decorative/readable but is not guaranteed to be uniquely decodable without the strict token boundaries.
+- English ⇄ strict/display ESHB
+- Swahili ⇄ ESHB with CH, SH, DH, TH, KH, GH, NY, NG and NG'
+- IPA ⇄ ESHB with reversible Unicode fallback
+- Egyptological transliteration ⇄ core hieroglyph rendering
+- Manuel de Codage ⇄ Egyptological transliteration for core special consonants
+- Middle Egyptian ⇄ English/Swahili learner lexicon
+- contextual translation that exposes ambiguity instead of hiding it
+- conventional classroom pronunciation for accessibility, clearly separated from historical reconstruction
+- browser speech recognition for English/Swahili input when the device supports it
+- optional live conversation mode that translates each completed utterance and can speak the reply
+- browser speech synthesis for read-aloud output
+- live camera capture, front/rear camera switching and periodic live scanning
+- image upload for desktop/museum/archival workflows
+- optional multimodal AI analysis of relic images
+- 26 structured Middle Egyptian lessons
+- vocabulary quiz and learner progress
+- authenticated history and learner correction feedback
+- guest, learner, contributor, reviewer and admin permission layers
+- human-reviewed lexicon proposals
+- optional daily AI proposal loop driven by repeated unresolved terms
+- responsive mobile/tablet/desktop UI
+- installable Progressive Web App shell
+- Docker packaging and GitHub Actions CI
 
-## Features
+## Critical accuracy principle
 
-- English → strict/display ESHB
-- Swahili → strict/display ESHB, including CH, SH, DH, TH, KH, GH, NY, NG and NG'
-- Strict ESHB → normalized orthographic spelling
-- IPA → ESHB and ESHB → IPA for common English/Swahili IPA symbols, with reversible Unicode fallback
-- Middle Egyptian uniliteral sign table
-- Manuel de Codage ↔ Unicode Egyptological transliteration conversion for the core special consonants
-- Egyptological transliteration → hieroglyph rendering
-  - selected lexicon-canonical/logographic forms when present
-  - explicitly labeled uniliteral fallback otherwise
-- Uniliteral hieroglyph parser → transliteration
-- Trilingual learner dictionary: Egyptian transliteration + English + Swahili
-- 26 original course lessons from script basics through verbal constructions and inscription analysis
-- Guarded dictionary/grammar translator that returns confidence, ambiguity and unsupported tokens instead of inventing a fake historical translation
-- Vocabulary quiz generator
-- SQLite learner progress API
-- FastAPI backend + responsive browser UI + CLI + tests
+The application never equates authentic Egyptian translation with replacing A–Z letters by pictures.
 
-## Run
+Historical translation follows this conceptual path:
+
+```text
+English / Swahili meaning
+        ↓
+semantic interpretation + discourse context
+        ↓
+Middle Egyptian lexical candidates
+        ↓
+morphology
+        ↓
+syntax
+        ↓
+Egyptological transliteration
+        ↓
+historical orthographic candidates
+        ↓
+phonograms + logograms + complements + determinatives
+        ↓
+hieroglyphic rendering
+```
+
+Reverse inscription analysis is:
+
+```text
+image / inscription
+        ↓
+reading direction + sign segmentation
+        ↓
+Gardiner/sign identification
+        ↓
+sign-function analysis
+        ↓
+transliteration candidates
+        ↓
+word segmentation + morphology
+        ↓
+syntax + context
+        ↓
+ranked English / Swahili meanings
+```
+
+When the evidence is insufficient, the platform reports uncertainty instead of manufacturing certainty.
+
+## Architecture
+
+```text
+Browser / PWA
+├── contextual text translator
+├── Live Lens camera
+├── Talk / speech interface
+├── lessons and dictionary
+├── ESHB + IPA + MdC script lab
+└── contributor/reviewer knowledge UI
+        │
+        ▼
+FastAPI
+├── auth.py             users, roles, sessions
+├── contextual.py       deterministic + optional AI nuance layer
+├── translator.py       lexicon and grammar templates
+├── egyptian.py         transliteration/sign tools + runtime lexicon overlay
+├── eshb.py             reversible ESHB and IPA encoding
+├── speech.py           classroom pronunciation
+├── vision.py           validated image pipeline
+├── ai.py               optional multimodal/contextual provider adapter
+├── pedagogy.py         lessons, quizzes, progress
+├── history.py          opt-in authenticated translation history
+├── feedback.py         learner ratings/corrections for reviewer inspection
+├── knowledge.py        proposals, review, unresolved-term queue
+└── learning_loop.py    daily AI drafts; never auto-approves knowledge
+        │
+        ▼
+SQLite runtime database
+```
+
+## Permission model
+
+| Role | Capabilities |
+|---|---|
+| Guest | translate, camera, voice, dictionary, lessons, ESHB/IPA/script tools |
+| Learner | guest capabilities + saved progress/history/feedback |
+| Contributor | learner capabilities + submit lexicon/grammar/sign proposals |
+| Reviewer | contributor capabilities + inspect unresolved terms and approve/reject proposals |
+| Admin | reviewer capabilities + manage user roles and manually run AI knowledge cycles |
+
+The first registered account is **not** automatically an admin. For a self-hosted instance, bootstrap an admin with environment variables shown below.
+
+## Live camera and AI
+
+Camera access happens in the browser through `getUserMedia`. The app captures compressed JPEG frames and sends them only when the user captures an image or enables live scanning.
+
+The application itself does **not** persist camera frames. When an external AI provider is configured, that provider receives the submitted frame for analysis. The current optional adapter uses the OpenAI Responses API with image input. The server keeps the API key private; it is never sent to the browser.
+
+Without an AI key, the camera and upload interfaces still operate and validate frames, but the backend reports that vision recognition is not configured instead of faking OCR.
+
+## Voice
+
+- **Speech input:** uses the browser's `SpeechRecognition`/`webkitSpeechRecognition` implementation when present. English uses `en-US`; Swahili requests `sw-KE`.
+- **Speech output:** uses browser `speechSynthesis`.
+- **Ancient Egyptian:** the app speaks a conventional Egyptological classroom reading, not a claim about exact Middle Kingdom pronunciation.
+
+Speech recognition support varies by browser and platform. The UI detects capability and keeps typing/OS dictation as fallback.
+
+## Human-reviewed AI learning loop
+
+The system records unresolved words encountered in failed translations. If the knowledge loop is enabled, an AI provider can periodically draft candidate lexicon entries for the most frequent unresolved terms.
+
+AI drafts are stored as **pending proposals**. They do not enter the live dictionary until a reviewer/admin explicitly approves them. The design intentionally prevents autonomous hallucinations from silently becoming linguistic truth.
+
+## Run locally
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+python -m pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
@@ -45,143 +161,119 @@ Open:
 http://127.0.0.1:8000
 ```
 
-Interactive API docs:
+FastAPI docs:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-## CLI
-
-```bash
-python cli.py encode "Habari yako" --lang swahili
-python cli.py decode "𓉔·𓄿·𓃀·𓄿·𓂋·𓇋"
-python cli.py ipa-encode "hɑbari"
-python cli.py hiero "nfr pr"
-python cli.py dict "nzuri" --lang swahili
-python cli.py translate "I am a scribe" --source english
-```
-
-## Translation pipeline
-
-The intended historical pipeline is:
-
-```text
-English/Swahili meaning
-    ↓
-semantic/lexical analysis
-    ↓
-Middle Egyptian vocabulary
-    ↓
-Middle Egyptian morphology + grammar
-    ↓
-Egyptological transliteration
-    ↓
-attested/canonical hieroglyphic spelling
-    ↓
-phonetic complements + determinatives
-    ↓
-sign-group/layout rendering
-```
-
-Historical reverse analysis is:
-
-```text
-inscription direction + sign segmentation
-    ↓
-Gardiner/sign identification
-    ↓
-phonograms / logograms / determinatives
-    ↓
-transliteration
-    ↓
-word segmentation + morphology
-    ↓
-syntax
-    ↓
-lexical sense disambiguation
-    ↓
-English/Swahili translation
-```
-
-The current historical translator deliberately supports curated dictionary entries and a set of teaching grammar templates. It **does not claim unrestricted machine translation of arbitrary inscriptions**. Free-form Ancient Egyptian translation requires a substantially larger attested corpus, morphological analyzer, period-aware grammar, sign-group resolver and human-verifiable lexical database.
-
-## Dictionary design
-
-Every lexicon item can contain:
-
-```json
-{
-  "transliteration": "nfr",
-  "english": ["good", "beautiful", "perfect"],
-  "swahili": ["nzuri", "mrembo", "kamili"],
-  "pos": "adjective",
-  "hieroglyphs": "𓄤",
-  "gardiner": ["F35"],
-  "mdc": "F35",
-  "notes": "...",
-  "confidence": "high"
-}
-```
-
-This project ships a curated **teaching core lexicon**, not a replacement for a professional Egyptological dictionary. Expand `app/data/lexicon/*.json` with source-linked entries rather than scraping copyrighted dictionaries.
-
-## Accuracy policy
-
-The system distinguishes:
-- **reversible bridge encoding** from
-- **historical transliteration**, from
-- **lexical glossing**, from
-- **grammatical translation**, from
-- **historical pronunciation reconstruction**.
-
-When a historical spelling is not stored, the renderer returns `authenticity = phonetic_fallback`. That is deliberate: an uniliteral spelling can represent consonants but should not be mislabeled as an attested ancient spelling.
-
-## Sources used to design the linguistic model
-
-The in-app References tab lists authoritative/reference material, including UCL Digital Egypt on the hieroglyphic writing system and sound signs, UCL material on pronunciation uncertainty, and bibliographic pointers to modern Middle Egyptian grammar/reference works.
-
-No copyrighted dictionary or textbook chapter is reproduced by this project. Lesson wording and the trilingual teaching entries are original educational content.
-
-## Next research-grade extensions
-
-For a production Egyptological translator, add:
-- an attestation database keyed by lemma, period, genre and source;
-- a complete Gardiner/Unicode/MdC sign database;
-- biliteral/triliteral and phonetic-complement parser;
-- determinative classifier;
-- Middle Egyptian morphological analyzer and generator;
-- VSO/nominal/adjectival/adverbial/relative-clause parser;
-- named-entity and royal-title handling;
-- sign-block layout engine using Egyptian Hieroglyph Format Controls / MdC rendering;
-- aligned Egyptian ↔ English/Swahili corpus with sentence-level provenance;
-- Coptic evidence layer and reconstruction confidence for pronunciation;
-- editor/reviewer workflow so every proposed lexical or grammatical addition is auditable.
-
-## License
-
-Code: MIT-style use is permitted for this generated project. Historical signs and Unicode characters are not proprietary to this codebase. Verify licensing separately for any external corpora you later import.
-
-
-## Repository implementation
-
-This repository is the canonical implementation for **Trans-Late-Ancient-Relics-**. It includes the FastAPI service, browser UI, command-line tools, curated trilingual teaching data, tests, Docker packaging and GitHub Actions CI.
-
-### Fast verification
+Run checks:
 
 ```bash
 make check
 ```
 
-### Docker
+## Docker
 
 ```bash
 docker compose up --build
 ```
 
-Then open `http://127.0.0.1:8000`.
+The Compose file persists SQLite runtime data in a named volume.
 
+## Optional AI configuration
 
-## Runtime persistence
+```bash
+export ESHB_AI_PROVIDER=openai
+export OPENAI_API_KEY='...'
+export ESHB_AI_MODEL='gpt-5.6'
+```
 
-Learner progress is stored in `data-runtime/tutor_progress.sqlite3` by default. Override the runtime directory with `ESHB_RUNTIME_DIR` or the exact database path with `ESHB_DB_PATH`. Docker Compose mounts this directory as a persistent named volume.
+Optional knowledge loop:
+
+```bash
+export ESHB_KNOWLEDGE_LOOP_ENABLED=true
+export ESHB_KNOWLEDGE_LOOP_HOURS=24
+export ESHB_KNOWLEDGE_LOOP_BATCH=5
+```
+
+Bootstrap an administrator on first startup:
+
+```bash
+export ESHB_BOOTSTRAP_ADMIN_USERNAME=admin
+export ESHB_BOOTSTRAP_ADMIN_PASSWORD='use-a-long-unique-password'
+export ESHB_BOOTSTRAP_ADMIN_DISPLAY_NAME='Administrator'
+```
+
+For HTTPS production deployments:
+
+```bash
+export ESHB_ENV=production
+export ESHB_SECURE_COOKIES=true
+```
+
+Never commit `.env` or API keys.
+
+## PWA and device support
+
+The responsive browser interface targets:
+
+- phones in portrait or landscape;
+- tablets used in classrooms, museums or field archaeology;
+- desktop/laptop research workstations;
+- touch and mouse/keyboard interaction;
+- installed PWA use where supported.
+
+Camera/microphone access generally requires a secure context (`https://`) except on `localhost`.
+
+The service worker caches only the application shell. Translation, authentication, AI analysis and fresh dictionary overlays remain network-backed.
+
+## API highlights
+
+```text
+POST /api/translate/contextual
+POST /api/vision/analyze
+POST /api/speech/classroom-reading
+POST /api/auth/register
+POST /api/auth/login
+POST /api/feedback
+GET  /api/auth/me
+GET  /api/dictionary
+GET  /api/lessons
+POST /api/knowledge/proposals
+PUT  /api/knowledge/proposals/{id}/evidence
+POST /api/knowledge/proposals/{id}/review
+POST /api/knowledge/loop/run
+```
+
+Existing ESHB, IPA, MdC and deterministic translation endpoints remain available for compatibility.
+
+## Data and copyright
+
+The repository contains an original educational core lexicon and lesson curriculum. It is **not** a substitute for a professional Egyptological dictionary or a fully attested corpus.
+
+When expanding the dictionary, store provenance and use sources whose licensing permits the intended use. Do not scrape copyrighted dictionaries into the repository.
+
+## Documentation
+
+- [`docs/END_TO_END_AUDIT.md`](docs/END_TO_END_AUDIT.md) — code/UI/logic audit and v2 rebuild decisions
+- [`docs/USER_JOURNEYS.md`](docs/USER_JOURNEYS.md) — device, role and workflow journeys
+- [`docs/SECURITY_PRIVACY.md`](docs/SECURITY_PRIVACY.md) — camera, microphone, sessions, AI and data handling
+- [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) — environment variables and deployment settings
+
+## Remaining research-grade work
+
+The v2 platform now has the interfaces and governance required for a serious product, but unrestricted historical translation still needs substantial scholarly data and models:
+
+- complete Unicode/Gardiner/MdC sign inventory;
+- biliteral/triliteral sign recognition and phonetic-complement parsing;
+- determinative classifier;
+- period-aware Middle Egyptian morphology and syntax;
+- sign-quadrat layout engine using Egyptian Hieroglyph Format Controls;
+- source-attested lemma database with period, genre and object provenance;
+- training/evaluation corpus for damaged inscriptions and alternative restorations;
+- hieratic/demotic/Coptic expansion;
+- dedicated vision model for epigraphy rather than general-purpose image reasoning;
+- evaluation benchmarks reviewed by Egyptologists.
+
+Those are explicit next layers, not hidden limitations.

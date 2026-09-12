@@ -1,1 +1,14 @@
-{"eshb_habari":"HABARI","eshb_kenya":"KENYA","ipa":"hɑbari","mdc":"sḏm","nfr":"𓄤","parse":"nfr","translate_good":"nfr","translate_scribe":"jnk sš"}
+{
+  "version": "2.0.0",
+  "eshb_habari": "HABARI",
+  "eshb_kenya": "KENYA",
+  "ipa_roundtrip_examples": ["hɑbari", "ɾa", "tʃai", "dʒa", "ŋa"],
+  "mdc": "sḏm",
+  "canonical_nfr": "𓄤",
+  "uniliteral_parse": "nfr",
+  "translate_good": "nfr",
+  "translate_scribe": "jnk sš",
+  "local_tests": 17,
+  "camera_frames_persisted": false,
+  "ai_auto_approval": false
+}

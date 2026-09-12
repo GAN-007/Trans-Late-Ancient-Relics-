@@ -1,1 +1,123 @@
-{"name":"ESHB Ancient Egyptian Tutor","focus":"Middle Egyptian","layers":[{"id":"eshb_orthography","purpose":"Reversible English/Swahili orthography ↔ ESHB","reversible":true},{"id":"eshb_ipa","purpose":"Reversible IPA ↔ ESHB with Unicode fallback","reversible":true},{"id":"egyptian_script","purpose":"Egyptological transliteration ↔ sign representation","reversible":"partial; historical spelling is context-sensitive"},{"id":"lexicon","purpose":"Egyptian ↔ English/Swahili lexical meanings","reversible":"sense-dependent"},{"id":"grammar","purpose":"Morphology/syntax and pedagogical translation","reversible":false},{"id":"pedagogy","purpose":"Lessons, quizzes, learner progress","reversible":false}],"translation_pipeline":["meaning","lexical selection","morphology","syntax","transliteration","orthography","determinatives/phonetic complements","layout"],"reverse_pipeline":["direction","sign segmentation","sign values/functions","transliteration","segmentation","morphology","syntax","sense disambiguation","translation"]}
+{
+  "name": "Trans-Late Ancient Relics",
+  "version": "2.0.0",
+  "focus": "Middle Egyptian with a separate reversible ESHB bridge",
+  "principles": [
+    "Do not confuse modern ESHB encoding with historical Egyptian language translation.",
+    "Preserve ambiguity and intent rather than forcing one gloss.",
+    "Do not auto-promote AI-generated linguistic claims into the trusted lexicon.",
+    "Do not persist live camera frames by default.",
+    "Expose uncertainty, provenance and review state to learners and reviewers.",
+    "Design input/output for text, voice, camera and touch across phone, tablet and desktop."
+  ],
+  "clients": {
+    "browser_pwa": {
+      "inputs": ["keyboard", "touch", "microphone", "camera", "image upload"],
+      "outputs": ["text", "hieroglyphs", "speech synthesis", "camera overlays"],
+      "device_classes": ["phone", "tablet", "desktop", "laptop", "Chromebook", "museum kiosk"]
+    },
+    "cli": {
+      "inputs": ["text", "IPA", "transliteration"],
+      "outputs": ["JSON", "hieroglyph Unicode", "analysis"]
+    },
+    "rest_api": {
+      "protocol": "HTTP/JSON",
+      "consumers": ["PWA", "native wrappers", "research tools", "museum systems", "learning integrations"]
+    }
+  },
+  "layers": [
+    {
+      "id": "eshb_orthography",
+      "purpose": "Reversible English/Swahili orthography ↔ ESHB",
+      "reversible": true
+    },
+    {
+      "id": "eshb_ipa",
+      "purpose": "Reversible IPA ↔ ESHB with Unicode fallback",
+      "reversible": true
+    },
+    {
+      "id": "historical_script",
+      "purpose": "Egyptological transliteration, Unicode hieroglyphs, Gardiner/MdC metadata",
+      "reversible": "partial because historical spelling and sign function are context-sensitive"
+    },
+    {
+      "id": "linguistic_core",
+      "purpose": "Curated trilingual lexicon, ambiguity-aware lexical analysis and conservative grammar templates",
+      "reversible": false
+    },
+    {
+      "id": "contextual_translation",
+      "purpose": "Combine deterministic analysis, discourse context, register and optional AI ranking without hiding uncertainty",
+      "reversible": false
+    },
+    {
+      "id": "vision",
+      "purpose": "Live/uploaded relic image analysis with validated image transport and optional multimodal AI",
+      "stores_frames": false
+    },
+    {
+      "id": "speech",
+      "purpose": "Browser speech recognition/synthesis plus explicitly conventional Egyptological classroom reading",
+      "historical_pronunciation_claim": false
+    },
+    {
+      "id": "pedagogy",
+      "purpose": "26 lessons, quizzes, progress and voice-assisted examples"
+    },
+    {
+      "id": "knowledge_governance",
+      "purpose": "Human/AI proposals, unresolved-term queue, reviewer approval and runtime lexicon overlay",
+      "auto_approval": false
+    },
+    {
+      "id": "identity_permissions",
+      "purpose": "Session authentication and role-based access for learner/contributor/reviewer/admin"
+    }
+  ],
+  "roles": {
+    "guest": ["translate", "camera", "voice", "dictionary", "lessons", "script tools"],
+    "learner": ["guest capabilities", "save progress", "save/clear own history", "submit feedback"],
+    "contributor": ["learner capabilities", "create knowledge proposals"],
+    "reviewer": ["contributor capabilities", "inspect unresolved terms", "review proposals"],
+    "admin": ["reviewer capabilities", "manage roles", "manually run AI knowledge drafting"]
+  },
+  "historical_translation_pipeline": [
+    "meaning / communicative intent",
+    "discourse context and register",
+    "Middle Egyptian lexical candidates",
+    "morphology",
+    "syntax",
+    "Egyptological transliteration",
+    "attested/canonical orthography when available",
+    "phonograms / logograms / phonetic complements / determinatives",
+    "sign grouping and layout"
+  ],
+  "reverse_epigraphy_pipeline": [
+    "image or inscription",
+    "reading direction",
+    "sign segmentation",
+    "Gardiner/sign candidates",
+    "sign function classification",
+    "transliteration candidates",
+    "word segmentation",
+    "morphology",
+    "syntax",
+    "sense disambiguation",
+    "English/Swahili interpretations with confidence"
+  ],
+  "knowledge_loop": {
+    "input": "frequently unresolved user terms",
+    "ai_action": "draft candidate lexicon proposals when explicitly configured",
+    "required_human_action": "reviewer/admin approval with evidence",
+    "output": "approved runtime lexicon overlay",
+    "default_background_state": "disabled"
+  },
+  "privacy": {
+    "camera": "permission is requested in the browser and frames are not persisted by the application",
+    "microphone": "browser speech APIs are user initiated; backend does not receive raw microphone audio",
+    "history": "opt-in and account scoped",
+    "passwords": "scrypt password hashes",
+    "sessions": "opaque HttpOnly SameSite cookies"
+  }
+}

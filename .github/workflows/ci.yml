@@ -23,10 +23,23 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: python -m pip install --upgrade pip && pip install -r requirements.txt
-      - name: Compile
+      - name: Compile Python
         run: python -m compileall -q app cli.py
       - name: Test
+        env:
+          ESHB_RUNTIME_DIR: ${{ runner.temp }}/eshb-runtime
+          ESHB_AI_PROVIDER: disabled
         run: python -m pytest -q
+      - name: Import API
+        env:
+          ESHB_RUNTIME_DIR: ${{ runner.temp }}/eshb-runtime
+          ESHB_AI_PROVIDER: disabled
+        run: python -c "from app.main import app; assert app.version == '2.0.0'"
+      - name: Check browser JavaScript syntax
+        run: |
+          for file in app/static/js/*.js app/static/service-worker.js; do
+            node --check "$file"
+          done
 
   docker:
     runs-on: ubuntu-latest
@@ -39,4 +52,4 @@ jobs:
         with:
           context: .
           push: false
-          tags: eshb-ancient-egyptian-tutor:ci
+          tags: trans-late-ancient-relics:ci

@@ -1,30 +1,37 @@
 from __future__ import annotations
-import json, os, random, sqlite3
+
+import json
+import random
 from datetime import datetime, timezone
 from pathlib import Path
-from .egyptian import LEXICON
+
+from .egyptian import current_lexicon
+from .runtime import connect
 
 DATA = Path(__file__).parent / "data"
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-RUNTIME_DIR = Path(os.environ.get("ESHB_RUNTIME_DIR", PROJECT_ROOT / "data-runtime"))
-RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-DB = Path(os.environ.get("ESHB_DB_PATH", RUNTIME_DIR / "tutor_progress.sqlite3"))
 
-def lessons():
-    items = []
-    for path in sorted((DATA / "lessons").glob("*.json")):
-        items.extend(json.loads(path.read_text(encoding="utf-8")))
+
+def lessons() -> list[dict]:
+    items: list[dict] = []
+    split_dir = DATA / "lessons"
+    if split_dir.exists():
+        for path in sorted(split_dir.glob("*.json")):
+            items.extend(json.loads(path.read_text(encoding="utf-8")))
+    else:
+        legacy = DATA / "lessons.json"
+        if legacy.exists():
+            items.extend(json.loads(legacy.read_text(encoding="utf-8")))
     return sorted(items, key=lambda x: x["id"])
 
-def get_lesson(lesson_id: int):
-    for lesson in lessons():
-        if lesson["id"] == lesson_id:
-            return lesson
-    return None
 
-def ensure_db():
-    conn = sqlite3.connect(DB)
-    conn.execute("""
+def get_lesson(lesson_id: int):
+    return next((lesson for lesson in lessons() if lesson["id"] == lesson_id), None)
+
+
+def ensure_progress_db() -> None:
+    conn = connect()
+    conn.execute(
+        """
         CREATE TABLE IF NOT EXISTS progress(
             learner TEXT NOT NULL,
             item_type TEXT NOT NULL,
@@ -34,33 +41,47 @@ def ensure_db():
             updated_at TEXT NOT NULL,
             PRIMARY KEY(learner, item_type, item_id)
         )
-    """)
+        """
+    )
     conn.commit()
-    return conn
+    conn.close()
+
 
 def save_progress(learner: str, item_type: str, item_id: str, score: float):
-    conn = ensure_db()
+    ensure_progress_db()
+    conn = connect()
     now = datetime.now(timezone.utc).isoformat()
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO progress(learner,item_type,item_id,score,attempts,updated_at)
         VALUES(?,?,?,?,1,?)
         ON CONFLICT(learner,item_type,item_id)
         DO UPDATE SET score=excluded.score, attempts=progress.attempts+1, updated_at=excluded.updated_at
-    """,(learner,item_type,item_id,float(score),now))
+        """,
+        (learner,item_type,item_id,float(score),now),
+    )
     conn.commit()
-    row = conn.execute("SELECT learner,item_type,item_id,score,attempts,updated_at FROM progress WHERE learner=? AND item_type=? AND item_id=?",(learner,item_type,item_id)).fetchone()
+    row = conn.execute(
+        "SELECT learner,item_type,item_id,score,attempts,updated_at FROM progress WHERE learner=? AND item_type=? AND item_id=?",
+        (learner,item_type,item_id),
+    ).fetchone()
     conn.close()
-    return dict(zip(["learner","item_type","item_id","score","attempts","updated_at"],row))
+    return dict(row)
+
 
 def get_progress(learner: str):
-    conn = ensure_db()
-    rows = conn.execute("SELECT learner,item_type,item_id,score,attempts,updated_at FROM progress WHERE learner=? ORDER BY updated_at DESC",(learner,)).fetchall()
+    ensure_progress_db()
+    conn = connect()
+    rows = conn.execute(
+        "SELECT learner,item_type,item_id,score,attempts,updated_at FROM progress WHERE learner=? ORDER BY updated_at DESC",
+        (learner,),
+    ).fetchall()
     conn.close()
-    keys=["learner","item_type","item_id","score","attempts","updated_at"]
-    return [dict(zip(keys,r)) for r in rows]
+    return [dict(row) for row in rows]
+
 
 def random_vocab_quiz(language: str="english", count: int=10):
-    pool=[e for e in LEXICON if e.get(language)]
+    pool=[e for e in current_lexicon() if e.get(language)]
     random.shuffle(pool)
     result=[]
     for e in pool[:count]:
@@ -76,5 +97,11 @@ def random_vocab_quiz(language: str="english", count: int=10):
                 break
         choices=distractors+[correct]
         random.shuffle(choices)
-        result.append({"id":e["transliteration"],"prompt":f"What does '{e['transliteration']}' mean?","choices":choices,"answer":correct,"hieroglyphs":e.get("hieroglyphs","")})
+        result.append({
+            "id":e["transliteration"],
+            "prompt":f"What does '{e['transliteration']}' mean?",
+            "choices":choices,
+            "answer":correct,
+            "hieroglyphs":e.get("hieroglyphs","")
+        })
     return result
