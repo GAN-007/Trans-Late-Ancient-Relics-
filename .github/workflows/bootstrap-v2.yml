@@ -1,0 +1,36 @@
+name: Bootstrap v2 rebuild
+on:
+  push:
+    branches: [rebuild/live-context-ai-v2]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Rebuild repository from staged payload
+        run: |
+          cat .bootstrap/payload.part* | base64 -d > /tmp/v2payload.tgz
+          tar -xzf /tmp/v2payload.tgz -C .
+          rm -rf .bootstrap
+          rm -f .github/workflows/bootstrap-v2.yml
+      - name: Validate source shape
+        run: |
+          python -m compileall -q app cli.py
+      - name: Commit rebuilt source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Rebuild platform for live multimodal translation and governed AI"
+            git push origin HEAD:rebuild/live-context-ai-v2
+          fi
