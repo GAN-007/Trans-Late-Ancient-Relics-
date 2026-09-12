@@ -1,0 +1,13 @@
+services:
+  tutor:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - tutor_data:/app/data-runtime
+    environment:
+      - ESHB_ENV=production
+    restart: unless-stopped
+
+volumes:
+  tutor_data:

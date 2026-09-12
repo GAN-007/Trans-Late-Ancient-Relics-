@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ESHB • Ancient Egyptian Tutor</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header>
+  <div>
+    <div class="eyebrow">MIDDLE EGYPTIAN LEARNING SYSTEM</div>
+    <h1>𓋹 ESHB Ancient Egyptian Tutor</h1>
+    <p>English ⇄ ESHB • Swahili ⇄ ESHB • IPA ⇄ ESHB • Transliteration ⇄ Hieroglyphs • Dictionary • Grammar • Lessons</p>
+  </div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="bridge" class="active">ESHB Bridge</button>
+  <button data-tab="egyptian">Egyptian Script</button>
+  <button data-tab="translate">Translator</button>
+  <button data-tab="dictionary">Dictionary</button>
+  <button data-tab="learn">Learn</button>
+  <button data-tab="signs">Signs</button>
+  <button data-tab="about">About</button>
+</nav>
+
+<main>
+<section id="bridge" class="tab active">
+  <div class="grid two">
+    <article class="card">
+      <h2>English / Swahili → ESHB</h2>
+      <label>Text</label>
+      <textarea id="bridgeInput" placeholder="Habari yako / My name is George">Habari yako</textarea>
+      <div class="row">
+        <select id="bridgeLang"><option value="auto">Auto</option><option value="english">English</option><option value="swahili">Swahili</option></select>
+        <button id="encodeBtn">Encode</button>
+      </div>
+      <label>Strict reversible form</label>
+      <textarea id="bridgeStrict" class="glyph" readonly></textarea>
+      <label>Display form</label>
+      <div id="bridgeDisplay" class="output glyph big"></div>
+    </article>
+
+    <article class="card">
+      <h2>Strict ESHB → English / Swahili spelling</h2>
+      <p class="muted">Decode the strict form. Separators preserve information; display-only glyph strings can be ambiguous.</p>
+      <textarea id="decodeInput" class="glyph" placeholder="𓉔·𓄿·𓃀·𓄿·𓂋·𓇋"></textarea>
+      <button id="decodeBtn">Decode</button>
+      <div id="decodeOutput" class="output"></div>
+
+      <hr>
+      <h2>IPA ↔ ESHB</h2>
+      <textarea id="ipaInput" placeholder="hɑˈbɑri"></textarea>
+      <button id="ipaEncodeBtn">Encode IPA</button>
+      <textarea id="ipaStrict" class="glyph" readonly></textarea>
+      <button id="ipaDecodeBtn">Decode strict IPA form</button>
+      <div id="ipaOutput" class="output"></div>
+    </article>
+  </div>
+</section>
+
+<section id="egyptian" class="tab">
+  <div class="grid two">
+    <article class="card">
+      <h2>Egyptological transliteration → hieroglyphs</h2>
+      <p class="muted">Known lexicon entries use selected canonical/logographic forms. Unknown words fall back to uniliteral spelling and are explicitly marked as such.</p>
+      <textarea id="translitInput">nfr pr</textarea>
+      <button id="hieroglyphizeBtn">Render</button>
+      <div id="hieroOutput" class="output glyph huge"></div>
+      <pre id="hieroAnalysis"></pre>
+    </article>
+    <article class="card">
+      <h2>Uniliteral hieroglyphs → transliteration</h2>
+      <textarea id="glyphInput" class="glyph">𓈖𓆑𓂋</textarea>
+      <button id="parseGlyphBtn">Parse uniliterals</button>
+      <div id="glyphOutput" class="output"></div>
+      <hr>
+      <h2>MdC converter</h2>
+      <input id="mdcInput" value="sDm">
+      <button id="mdcBtn">MdC → transliteration</button>
+      <div id="mdcOutput" class="output"></div>
+    </article>
+  </div>
+</section>
+
+<section id="translate" class="tab">
+  <article class="card">
+    <h2>Meaning → Middle Egyptian → hieroglyphs</h2>
+    <p class="warning">This translator refuses to disguise unsupported word substitution as authentic Egyptian. Exact dictionary entries and verified teaching templates receive translations; unsupported sentences receive lexical analysis plus unresolved words.</p>
+    <div class="row">
+      <select id="sourceLang"><option value="english">English</option><option value="swahili">Swahili</option><option value="egyptian">Egyptian transliteration</option></select>
+      <select id="targetLang"><option value="egyptian">Middle Egyptian</option><option value="english">English</option><option value="swahili">Swahili</option></select>
+    </div>
+    <textarea id="translateInput">I am a scribe</textarea>
+    <button id="translateBtn">Translate / Analyze</button>
+    <div id="translationGlyphs" class="glyph huge"></div>
+    <pre id="translationOutput"></pre>
+  </article>
+</section>
+
+<section id="dictionary" class="tab">
+  <article class="card">
+    <h2>Trilingual learner dictionary</h2>
+    <div class="row">
+      <input id="dictQuery" placeholder="Search: good / nzuri / nfr">
+      <select id="dictLang"><option value="all">All fields</option><option value="english">English</option><option value="swahili">Swahili</option><option value="egyptian">Egyptian</option></select>
+      <button id="dictBtn">Search</button>
+    </div>
+    <div id="dictResults"></div>
+  </article>
+</section>
+
+<section id="learn" class="tab">
+  <div class="grid learn-grid">
+    <aside class="card">
+      <h2>26-lesson course</h2>
+      <div id="lessonList"></div>
+    </aside>
+    <article class="card" id="lessonPane">
+      <h2>Select a lesson</h2>
+      <p>The curriculum moves from sign mechanics to nouns, pronouns, sentence types, verbal forms and real-inscription workflow.</p>
+    </article>
+  </div>
+</section>
+
+<section id="signs" class="tab">
+  <article class="card">
+    <h2>Core one-consonant sign list</h2>
+    <div id="signTable" class="tablewrap"></div>
+  </article>
+</section>
+
+<section id="about" class="tab">
+  <article class="card">
+    <h2>What this system is — and is not</h2>
+    <p><strong>ESHB</strong> is a modern reversible bridge for English/Swahili spelling and IPA. It is deliberately separate from historical Egyptian.</p>
+    <p><strong>Middle Egyptian mode</strong> teaches the ancient language. Historical inscriptions use consonantal phonograms, multi-consonant signs, logograms, determinatives, phonetic complements and artistic sign grouping. Vowels are not normally written, so exact Middle Egyptian pronunciation is not fully recoverable.</p>
+    <p><strong>Translation policy:</strong> the software reports confidence and ambiguity. It does not invent Egyptian words when the lexicon or grammar does not support them.</p>
+    <h3>Research references</h3>
+    <div id="references"></div>
+  </article>
+</section>
+</main>
+
+<footer>ESHB Tutor v1.0 • Focus: Middle Egyptian • Educational software with explicit uncertainty</footer>
+<script src="/static/app.js"></script>
+</body>
+</html>
