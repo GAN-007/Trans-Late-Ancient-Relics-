@@ -1,0 +1,10 @@
+[
+  {"id": 0, "gardiner": "A1", "unicode": "𓀀", "values": [], "label": "person/man classifier"},
+  {"id": 1, "gardiner": "B1", "unicode": "𓁐", "values": [], "label": "woman/female classifier"},
+  {"id": 2, "gardiner": "F35", "unicode": "𓄤", "values": ["nfr"], "label": "nfr sign"},
+  {"id": 3, "gardiner": "N35", "unicode": "𓈖", "values": ["n"], "label": "water ripple / n"},
+  {"id": 4, "gardiner": "S34", "unicode": "𓋹", "values": ["ꜥnḫ"], "label": "ankh / life"},
+  {"id": 5, "gardiner": "R4", "unicode": "𓊵", "values": ["ḥtp"], "label": "offering table / htp"},
+  {"id": 6, "gardiner": "O1", "unicode": "𓉐", "values": ["pr"], "label": "house plan / pr"},
+  {"id": 7, "gardiner": "R8", "unicode": "𓊹", "values": ["nṯr"], "label": "divine standard / ntr"}
+]

@@ -1,123 +1,75 @@
 {
   "name": "Trans-Late Ancient Relics",
-  "version": "2.0.0",
-  "focus": "Middle Egyptian with a separate reversible ESHB bridge",
+  "version": "3.0.0",
+  "focus": "Evidence-aware Middle Egyptian epigraphy/translation with a separate reversible ESHB bridge",
   "principles": [
-    "Do not confuse modern ESHB encoding with historical Egyptian language translation.",
-    "Preserve ambiguity and intent rather than forcing one gloss.",
-    "Do not auto-promote AI-generated linguistic claims into the trusted lexicon.",
-    "Do not persist live camera frames by default.",
-    "Expose uncertainty, provenance and review state to learners and reviewers.",
-    "Design input/output for text, voice, camera and touch across phone, tablet and desktop."
+    "Never confuse modern ESHB encoding with historical Egyptian translation.",
+    "Treat detector probability, linguistic confidence and scholarly attestation as different evidence types.",
+    "Preserve ambiguity and ask for context rather than forcing one fluent answer.",
+    "Never infer authentic reading direction from bounding-box left-to-right order alone.",
+    "Never auto-promote AI linguistic claims, research corrections or candidate models into production knowledge.",
+    "Ordinary live frames are transient; research image retention requires explicit per-item consent and server policy.",
+    "Classroom pronunciation is not historical vocalization.",
+    "Design for phone, tablet, desktop, research workstation and museum/field use."
   ],
   "clients": {
     "browser_pwa": {
       "inputs": ["keyboard", "touch", "microphone", "camera", "image upload"],
-      "outputs": ["text", "hieroglyphs", "speech synthesis", "camera overlays"],
+      "outputs": ["text", "hieroglyphs", "speech synthesis", "camera overlays", "ambiguity/evidence"],
+      "transports": ["HTTP/JSON", "same-origin WebSocket"],
       "device_classes": ["phone", "tablet", "desktop", "laptop", "Chromebook", "museum kiosk"]
     },
-    "cli": {
-      "inputs": ["text", "IPA", "transliteration"],
-      "outputs": ["JSON", "hieroglyph Unicode", "analysis"]
-    },
-    "rest_api": {
-      "protocol": "HTTP/JSON",
-      "consumers": ["PWA", "native wrappers", "research tools", "museum systems", "learning integrations"]
-    }
+    "cli": {"inputs": ["text", "IPA", "transliteration"], "outputs": ["JSON", "hieroglyph Unicode", "analysis"]},
+    "api": {"protocols": ["HTTP/JSON", "WebSocket/JSON"], "consumers": ["PWA", "native wrappers", "research tools", "museum systems", "learning integrations"]}
   },
   "layers": [
-    {
-      "id": "eshb_orthography",
-      "purpose": "Reversible English/Swahili orthography ↔ ESHB",
-      "reversible": true
-    },
-    {
-      "id": "eshb_ipa",
-      "purpose": "Reversible IPA ↔ ESHB with Unicode fallback",
-      "reversible": true
-    },
-    {
-      "id": "historical_script",
-      "purpose": "Egyptological transliteration, Unicode hieroglyphs, Gardiner/MdC metadata",
-      "reversible": "partial because historical spelling and sign function are context-sensitive"
-    },
-    {
-      "id": "linguistic_core",
-      "purpose": "Curated trilingual lexicon, ambiguity-aware lexical analysis and conservative grammar templates",
-      "reversible": false
-    },
-    {
-      "id": "contextual_translation",
-      "purpose": "Combine deterministic analysis, discourse context, register and optional AI ranking without hiding uncertainty",
-      "reversible": false
-    },
-    {
-      "id": "vision",
-      "purpose": "Live/uploaded relic image analysis with validated image transport and optional multimodal AI",
-      "stores_frames": false
-    },
-    {
-      "id": "speech",
-      "purpose": "Browser speech recognition/synthesis plus explicitly conventional Egyptological classroom reading",
-      "historical_pronunciation_claim": false
-    },
-    {
-      "id": "pedagogy",
-      "purpose": "26 lessons, quizzes, progress and voice-assisted examples"
-    },
-    {
-      "id": "knowledge_governance",
-      "purpose": "Human/AI proposals, unresolved-term queue, reviewer approval and runtime lexicon overlay",
-      "auto_approval": false
-    },
-    {
-      "id": "identity_permissions",
-      "purpose": "Session authentication and role-based access for learner/contributor/reviewer/admin"
-    }
+    {"id": "eshb_orthography", "purpose": "Reversible English/Swahili orthography ↔ ESHB", "reversible": true},
+    {"id": "eshb_ipa", "purpose": "Reversible IPA ↔ ESHB with Unicode fallback", "reversible": true},
+    {"id": "historical_script", "purpose": "Transliteration, core signs, format controls, Extended-A detection and sign-function candidates", "reversible": "partial/context-sensitive"},
+    {"id": "morphology", "purpose": "Conservative teaching morphology and clause hints", "complete_historical_parser": false},
+    {"id": "linguistic_core", "purpose": "Trilingual lexicon, ambiguity-aware lexical analysis and grammar templates", "reversible": false},
+    {"id": "contextual_translation", "purpose": "Deterministic evidence + context + clarification questions + optional AI ranking", "ai_can_raise_evidence_tier": false},
+    {"id": "vision_orchestration", "purpose": "Validated image transport and local/AI/hybrid evidence routing", "ordinary_frames_persisted": false},
+    {"id": "local_vision", "purpose": "Optional OpenCV/ONNX detector adapter with letterbox/NMS/model identity", "weights_shipped": false},
+    {"id": "streaming", "purpose": "Vision/conversation WebSockets with per-connection rate limits and sequential backpressure", "persistence": false},
+    {"id": "pronunciation", "purpose": "Classroom reading + consonantal IPA candidates + explicit historical uncertainty", "exact_vowels_claimed": false},
+    {"id": "pedagogy", "purpose": "26 lessons, quizzes and authenticated progress"},
+    {"id": "knowledge_governance", "purpose": "Proposals, unresolved-term queue, evidence review and runtime lexicon overlay", "auto_approval": false},
+    {"id": "active_learning", "purpose": "Opt-in vision corrections, reviewer approval and dataset manifest", "automatic_retraining": false, "automatic_model_promotion": false},
+    {"id": "identity_permissions", "purpose": "scrypt-based accounts, opaque sessions and server-side RBAC"}
   ],
   "roles": {
-    "guest": ["translate", "camera", "voice", "dictionary", "lessons", "script tools"],
-    "learner": ["guest capabilities", "save progress", "save/clear own history", "submit feedback"],
-    "contributor": ["learner capabilities", "create knowledge proposals"],
-    "reviewer": ["contributor capabilities", "inspect unresolved terms", "review proposals"],
-    "admin": ["reviewer capabilities", "manage roles", "manually run AI knowledge drafting"]
+    "guest": ["translate", "camera", "voice", "dictionary", "lessons", "script/epigraphy tools"],
+    "learner": ["guest capabilities", "save progress/history/feedback", "submit vision corrections"],
+    "contributor": ["learner capabilities", "create linguistic knowledge proposals"],
+    "reviewer": ["contributor capabilities", "inspect/review linguistic proposals", "inspect/review vision corrections"],
+    "admin": ["reviewer capabilities", "manage roles", "run AI draft loop", "export approved dataset manifest"]
   },
   "historical_translation_pipeline": [
-    "meaning / communicative intent",
-    "discourse context and register",
-    "Middle Egyptian lexical candidates",
-    "morphology",
-    "syntax",
-    "Egyptological transliteration",
-    "attested/canonical orthography when available",
-    "phonograms / logograms / phonetic complements / determinatives",
-    "sign grouping and layout"
+    "meaning / communicative intent", "period/genre/provenance when known", "lexical sense candidates", "morphology", "syntax", "Egyptological transliteration", "attested orthography", "phonogram/logogram/complement/determinative function", "quadrat/layout representation"
   ],
   "reverse_epigraphy_pipeline": [
-    "image or inscription",
-    "reading direction",
-    "sign segmentation",
-    "Gardiner/sign candidates",
-    "sign function classification",
-    "transliteration candidates",
-    "word segmentation",
-    "morphology",
-    "syntax",
-    "sense disambiguation",
-    "English/Swahili interpretations with confidence"
+    "image or encoded inscription", "region/sign candidates", "orientation/reading-direction hypotheses", "group/quadrat analysis", "sign-function candidates", "transliteration candidates", "word segmentation", "morphology", "syntax", "sense/context disambiguation", "English/Swahili interpretations with evidence/confidence"
   ],
-  "knowledge_loop": {
-    "input": "frequently unresolved user terms",
-    "ai_action": "draft candidate lexicon proposals when explicitly configured",
-    "required_human_action": "reviewer/admin approval with evidence",
-    "output": "approved runtime lexicon overlay",
-    "default_background_state": "disabled"
+  "vision_backends": {
+    "auto": "prefer reviewed local ONNX when available, otherwise configured multimodal AI",
+    "local": "local ONNX only",
+    "ai": "multimodal provider only",
+    "hybrid": "run both and expose disagreements"
+  },
+  "active_learning": {
+    "default_image_retention": false,
+    "requires_explicit_image_consent": true,
+    "review_required": true,
+    "automatic_retraining": false,
+    "automatic_model_promotion": false
   },
   "privacy": {
-    "camera": "permission is requested in the browser and frames are not persisted by the application",
-    "microphone": "browser speech APIs are user initiated; backend does not receive raw microphone audio",
+    "ordinary_camera_analysis": "transient and not persisted",
+    "research_images": "stored only when deployment enables collection and the user explicitly opts in",
+    "microphone": "browser speech API is user initiated; app backend receives transcript rather than raw microphone audio",
     "history": "opt-in and account scoped",
-    "passwords": "scrypt password hashes",
-    "sessions": "opaque HttpOnly SameSite cookies"
+    "passwords": "scrypt",
+    "sessions": "opaque server-hashed token in HttpOnly SameSite cookie"
   }
 }

@@ -6,3 +6,7 @@ __pycache__/
 data-runtime/
 *.sqlite3
 .DS_Store
+*.onnx
+models/classes.json
+datasets/
+research-exports/

@@ -1,50 +1,55 @@
 # Trans-Late Ancient Relics
 
-**Trans-Late Ancient Relics** is an Ancient Egyptian learning and translation platform built around a strict separation between:
+**Trans-Late Ancient Relics v3** is an evidence-aware Ancient Egyptian learning, epigraphy and translation platform. Its core design rule is that two different systems must never be confused:
 
-1. **ESHB** — a modern reversible bridge for English, Swahili and IPA using Egyptian hieroglyphic Unicode signs as an encoding layer; and
-2. **Middle Egyptian** — the historical language, where signs can be phonograms, logograms, determinatives or phonetic complements and where translation requires morphology, syntax and context.
+1. **ESHB** — a modern, algorithmically reversible English/Swahili/IPA bridge that uses hieroglyphic Unicode signs as an encoding alphabet; and
+2. **Historical Egyptian** — a language and writing system in which signs can be phonograms, logograms, determinatives, phonetic complements or layout elements, and where translation requires morphology, syntax, context and evidence.
 
-Version **2.0** expands the original tutor into a multimodal, accessible platform with contextual translation, live camera capture, spoken interaction, an installable PWA shell, user roles and a human-reviewed AI knowledge loop.
+v3 extends the v2 multimodal platform with a real epigraphy-analysis layer, optional local ONNX vision, WebSocket live camera/conversation paths, pronunciation evidence profiles and a privacy-gated human correction loop for future model research.
 
-## What v2 can do
+## What v3 can do
 
 - English ⇄ strict/display ESHB
 - Swahili ⇄ ESHB with CH, SH, DH, TH, KH, GH, NY, NG and NG'
 - IPA ⇄ ESHB with reversible Unicode fallback
 - Egyptological transliteration ⇄ core hieroglyph rendering
-- Manuel de Codage ⇄ Egyptological transliteration for core special consonants
+- Manuel de Codage ⇄ core Egyptological transliteration symbols
 - Middle Egyptian ⇄ English/Swahili learner lexicon
-- contextual translation that exposes ambiguity instead of hiding it
-- conventional classroom pronunciation for accessibility, clearly separated from historical reconstruction
-- browser speech recognition for English/Swahili input when the device supports it
-- optional live conversation mode that translates each completed utterance and can speak the reply
-- browser speech synthesis for read-aloud output
-- live camera capture, front/rear camera switching and periodic live scanning
-- image upload for desktop/museum/archival workflows
-- optional multimodal AI analysis of relic images
-- 26 structured Middle Egyptian lessons
-- vocabulary quiz and learner progress
-- authenticated history and learner correction feedback
+- contextual translation with alternatives, clarification questions and evidence ceilings
+- rule-based teaching morphology including suffix-pronoun and `sḏm.n.f`-type analysis
+- Unicode Egyptian Hieroglyph sign detection
+- Egyptian Hieroglyph Format Control recognition for layout/damage metadata
+- Egyptian Hieroglyphs Extended-A detection
+- candidate phonogram/logogram/determinative/phonetic-complement analysis
+- conventional classroom pronunciation plus a separate consonantal IPA research aid
+- browser speech recognition for English/Swahili where supported
+- browser speech synthesis/read-aloud
+- stateful WebSocket conversation translation with HTTP fallback
+- rear/front live camera capture and image upload
+- WebSocket live camera analysis with backpressure instead of fixed 500 ms polling
+- optional local OpenCV/ONNX sign detector adapter
+- optional multimodal AI vision
+- hybrid local/AI evidence comparison with disagreement reporting
+- signed-in research corrections with human review
+- image retention only under explicit user consent **and** server policy
+- no automatic retraining or automatic model promotion
+- 26 structured Middle Egyptian lessons, quizzes and progress
 - guest, learner, contributor, reviewer and admin permission layers
-- human-reviewed lexicon proposals
-- optional daily AI proposal loop driven by repeated unresolved terms
-- responsive mobile/tablet/desktop UI
-- installable Progressive Web App shell
-- Docker packaging and GitHub Actions CI
+- human-reviewed knowledge proposals and optional AI draft loop
+- responsive PWA, Docker and Python 3.11–3.13 CI
 
-## Critical accuracy principle
+## Accuracy boundary
 
-The application never equates authentic Egyptian translation with replacing A–Z letters by pictures.
+This project does not create authentic Egyptian by mapping English letters to birds or snakes.
 
-Historical translation follows this conceptual path:
+Historical forward translation conceptually requires:
 
 ```text
 English / Swahili meaning
         ↓
-semantic interpretation + discourse context
+intent + discourse + register
         ↓
-Middle Egyptian lexical candidates
+Middle Egyptian lexical senses
         ↓
 morphology
         ↓
@@ -56,101 +61,198 @@ historical orthographic candidates
         ↓
 phonograms + logograms + complements + determinatives
         ↓
-hieroglyphic rendering
+quadrat/layout representation
 ```
 
-Reverse inscription analysis is:
+Reverse inscription analysis requires:
 
 ```text
-image / inscription
+artifact image / encoded inscription
         ↓
-reading direction + sign segmentation
+region + sign detection
         ↓
-Gardiner/sign identification
+orientation / reading-direction hypotheses
         ↓
-sign-function analysis
+sign grouping + quadrats
+        ↓
+phonogram / logogram / determinative / complement candidates
         ↓
 transliteration candidates
         ↓
 word segmentation + morphology
         ↓
-syntax + context
+syntax + period/genre/context
         ↓
-ranked English / Swahili meanings
+ranked English / Swahili interpretations
 ```
 
-When the evidence is insufficient, the platform reports uncertainty instead of manufacturing certainty.
+v3 implements more of this pipeline than v2, but it still reports unresolved research layers rather than inventing certainty.
 
 ## Architecture
 
 ```text
 Browser / PWA
-├── contextual text translator
-├── Live Lens camera
-├── Talk / speech interface
-├── lessons and dictionary
-├── ESHB + IPA + MdC script lab
-└── contributor/reviewer knowledge UI
-        │
-        ▼
-FastAPI
-├── auth.py             users, roles, sessions
-├── contextual.py       deterministic + optional AI nuance layer
-├── translator.py       lexicon and grammar templates
-├── egyptian.py         transliteration/sign tools + runtime lexicon overlay
-├── eshb.py             reversible ESHB and IPA encoding
-├── speech.py           classroom pronunciation
-├── vision.py           validated image pipeline
-├── ai.py               optional multimodal/contextual provider adapter
-├── pedagogy.py         lessons, quizzes, progress
-├── history.py          opt-in authenticated translation history
-├── feedback.py         learner ratings/corrections for reviewer inspection
-├── knowledge.py        proposals, review, unresolved-term queue
-└── learning_loop.py    daily AI drafts; never auto-approves knowledge
-        │
-        ▼
-SQLite runtime database
+├── Contextual Translate
+├── Live Lens
+│   ├── manual HTTP capture/upload
+│   └── WebSocket live stream with backpressure
+├── Talk
+│   ├── browser speech recognition
+│   ├── WebSocket conversation context
+│   └── speech synthesis
+├── Learn / Dictionary
+├── Script Lab
+└── Knowledge / correction workflows
+          │
+          ▼
+FastAPI v3
+├── eshb.py              reversible modern bridge
+├── egyptian.py          core transliteration/rendering + lexicon overlay
+├── epigraphy.py         Unicode/sign-function/layout candidates
+├── morphology.py        conservative teaching morphology
+├── translator.py        deterministic lexicon/templates
+├── contextual.py        evidence tier + optional AI ranking
+├── speech.py            classroom + consonantal pronunciation profiles
+├── vision.py            backend orchestration / hybrid evidence
+├── vision_local.py      optional OpenCV/ONNX detector adapter
+├── ai.py                optional multimodal/text reviewer
+├── streaming.py         live vision/conversation WebSockets
+├── active_learning.py   governed vision correction/dataset manifest
+├── knowledge.py         linguistic proposals/review
+├── learning_loop.py     optional AI drafts, never auto-approved
+├── auth.py              users/sessions/RBAC
+├── pedagogy.py          lessons/quizzes/progress
+├── history.py           opt-in translation history
+├── feedback.py          learner feedback
+└── security.py          CSP/origin checks/rate controls
+          │
+          ▼
+SQLite/WAL runtime data for single-node deployments
 ```
 
 ## Permission model
 
 | Role | Capabilities |
 |---|---|
-| Guest | translate, camera, voice, dictionary, lessons, ESHB/IPA/script tools |
-| Learner | guest capabilities + saved progress/history/feedback |
-| Contributor | learner capabilities + submit lexicon/grammar/sign proposals |
-| Reviewer | contributor capabilities + inspect unresolved terms and approve/reject proposals |
-| Admin | reviewer capabilities + manage user roles and manually run AI knowledge cycles |
+| Guest | translate, camera, voice, dictionary, lessons, script/epigraphy tools |
+| Learner | guest + progress/history/feedback + submit vision corrections |
+| Contributor | learner + linguistic knowledge proposals |
+| Reviewer | contributor + review knowledge/vision corrections and inspect research queues |
+| Admin | reviewer + manage roles, run AI draft cycles and export approved dataset manifests |
 
-The first registered account is **not** automatically an admin. For a self-hosted instance, bootstrap an admin with environment variables shown below.
+The server enforces these permissions; hiding UI controls is not the security boundary.
 
-## Live camera and AI
+## Live camera vision
 
-Camera access happens in the browser through `getUserMedia`. The app captures compressed JPEG frames and sends them only when the user captures an image or enables live scanning.
+### Hosted multimodal backend
 
-The application itself does **not** persist camera frames. When an external AI provider is configured, that provider receives the submitted frame for analysis. The current optional adapter uses the OpenAI Responses API with image input. The server keeps the API key private; it is never sent to the browser.
+```bash
+export ESHB_AI_PROVIDER=openai
+export OPENAI_API_KEY='...'
+export ESHB_AI_MODEL='gpt-5.6'
+export ESHB_VISION_BACKEND=ai
+```
 
-Without an AI key, the camera and upload interfaces still operate and validate frames, but the backend reports that vision recognition is not configured instead of faking OCR.
+### Local ONNX backend
 
-## Voice
+The repository contains the inference adapter but intentionally does not contain fabricated model weights.
 
-- **Speech input:** uses the browser's `SpeechRecognition`/`webkitSpeechRecognition` implementation when present. English uses `en-US`; Swahili requests `sw-KE`.
-- **Speech output:** uses browser `speechSynthesis`.
-- **Ancient Egyptian:** the app speaks a conventional Egyptological classroom reading, not a claim about exact Middle Kingdom pronunciation.
+```bash
+pip install -r requirements-vision.txt
+export ESHB_VISION_BACKEND=local
+export ESHB_VISION_MODEL_PATH=/models/relic_detector.onnx
+export ESHB_VISION_CLASSES_PATH=/models/classes.json
+```
 
-Speech recognition support varies by browser and platform. The UI detects capability and keeps typing/OS dictation as fallback.
+See [`models/README.md`](models/README.md).
 
-## Human-reviewed AI learning loop
+### Hybrid mode
 
-The system records unresolved words encountered in failed translations. If the knowledge loop is enabled, an AI provider can periodically draft candidate lexicon entries for the most frequent unresolved terms.
+```bash
+export ESHB_VISION_BACKEND=hybrid
+```
 
-AI drafts are stored as **pending proposals**. They do not enter the live dictionary until a reviewer/admin explicitly approves them. The design intentionally prevents autonomous hallucinations from silently becoming linguistic truth.
+When local and AI candidates disagree, the API exposes that disagreement. Neither source silently overwrites the other.
+
+### Reading direction
+
+The detector does **not** claim that left-to-right bounding-box order is Egyptian reading order. It returns low-confidence geometric hypotheses; sign orientation/facing and epigraphic context must establish direction.
+
+## Live transport
+
+The Live Lens uses:
+
+```text
+WS /ws/vision
+```
+
+A new frame is sent only after the previous result arrives. This avoids request pile-ups and reduces mobile bandwidth/heat compared with fixed high-frequency polling.
+
+Conversation mode uses:
+
+```text
+WS /ws/conversation
+```
+
+It retains only a short in-memory meaning trace for that socket. The streaming layer does not persist conversation turns.
+
+## Pronunciation
+
+Three concepts are kept separate:
+
+- **classroom reading** — modern Egyptological convention, useful for learners/accessibility;
+- **consonantal IPA skeleton** — broad candidate consonant values with uncertainty;
+- **historical reconstruction** — not produced automatically without period/lexeme/comparative evidence.
+
+Example endpoint:
+
+```http
+POST /api/speech/pronunciation
+{
+  "text": "nfr sḏm",
+  "profile": "research"
+}
+```
+
+The API explicitly states that unwritten vowels have not been reconstructed.
+
+## Research correction / active-learning loop
+
+Ordinary camera frames are transient. A signed-in learner/researcher may submit a correction after a bad result:
+
+```text
+machine analysis
+      ↓
+user/researcher correction
+      ↓
+pending correction
+      ↓
+reviewer approve/reject
+      ↓
+approved dataset manifest
+      ↓
+external dataset QA / training / benchmark
+      ↓
+human-gated model promotion
+```
+
+Image retention is disabled by default:
+
+```bash
+export ESHB_ACTIVE_LEARNING_STORE_IMAGES=false
+```
+
+If an institution enables it, the individual correction still requires explicit user consent.
+
+The application never triggers model training or swaps production weights automatically merely because a row-count threshold has been reached.
+
+See [`docs/V3_RESEARCH_MODEL_GOVERNANCE.md`](docs/V3_RESEARCH_MODEL_GOVERNANCE.md).
 
 ## Run locally
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 python -m pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
@@ -161,7 +263,7 @@ Open:
 http://127.0.0.1:8000
 ```
 
-FastAPI docs:
+API docs:
 
 ```text
 http://127.0.0.1:8000/docs
@@ -179,101 +281,86 @@ make check
 docker compose up --build
 ```
 
-The Compose file persists SQLite runtime data in a named volume.
+The base container stays lightweight and does not install local computer-vision dependencies. Build a vision-specific image/profile when using ONNX/OpenCV.
 
-## Optional AI configuration
+## Environment highlights
 
 ```bash
+# Runtime
+export ESHB_ENV=production
+export ESHB_SECURE_COOKIES=true
+
+# Optional AI
 export ESHB_AI_PROVIDER=openai
 export OPENAI_API_KEY='...'
 export ESHB_AI_MODEL='gpt-5.6'
-```
 
-Optional knowledge loop:
+# Vision routing
+export ESHB_VISION_BACKEND=auto        # auto | local | ai | hybrid
+export ESHB_VISION_MODEL_PATH=/models/relic_detector.onnx
+export ESHB_VISION_CLASSES_PATH=/models/classes.json
+export ESHB_VISION_CONFIDENCE=0.45
+export ESHB_VISION_NMS_IOU=0.45
 
-```bash
-export ESHB_KNOWLEDGE_LOOP_ENABLED=true
+# Active-learning privacy
+export ESHB_ACTIVE_LEARNING_ENABLED=true
+export ESHB_ACTIVE_LEARNING_STORE_IMAGES=false
+
+# Knowledge draft loop
+export ESHB_KNOWLEDGE_LOOP_ENABLED=false
 export ESHB_KNOWLEDGE_LOOP_HOURS=24
 export ESHB_KNOWLEDGE_LOOP_BATCH=5
-```
 
-Bootstrap an administrator on first startup:
-
-```bash
+# Bootstrap administrator
 export ESHB_BOOTSTRAP_ADMIN_USERNAME=admin
 export ESHB_BOOTSTRAP_ADMIN_PASSWORD='use-a-long-unique-password'
-export ESHB_BOOTSTRAP_ADMIN_DISPLAY_NAME='Administrator'
 ```
 
-For HTTPS production deployments:
+Never commit secrets, `.env` files, private datasets or restricted model weights.
 
-```bash
-export ESHB_ENV=production
-export ESHB_SECURE_COOKIES=true
-```
-
-Never commit `.env` or API keys.
-
-## PWA and device support
-
-The responsive browser interface targets:
-
-- phones in portrait or landscape;
-- tablets used in classrooms, museums or field archaeology;
-- desktop/laptop research workstations;
-- touch and mouse/keyboard interaction;
-- installed PWA use where supported.
-
-Camera/microphone access generally requires a secure context (`https://`) except on `localhost`.
-
-The service worker caches only the application shell. Translation, authentication, AI analysis and fresh dictionary overlays remain network-backed.
-
-## API highlights
+## v3 API highlights
 
 ```text
 POST /api/translate/contextual
+POST /api/egyptian/analyze-signs
+POST /api/egyptian/analyze-transliteration
+GET  /api/egyptian/epigraphy-capabilities
+POST /api/speech/pronunciation
+GET  /api/vision/status
 POST /api/vision/analyze
-POST /api/speech/classroom-reading
-POST /api/auth/register
-POST /api/auth/login
-POST /api/feedback
-GET  /api/auth/me
-GET  /api/dictionary
-GET  /api/lessons
-POST /api/knowledge/proposals
-PUT  /api/knowledge/proposals/{id}/evidence
-POST /api/knowledge/proposals/{id}/review
-POST /api/knowledge/loop/run
+WS   /ws/vision
+WS   /ws/conversation
+POST /api/vision/corrections
+GET  /api/vision/corrections
+POST /api/vision/corrections/{id}/review
+GET  /api/research/collection-policy
+GET  /api/research/dataset-manifest
 ```
 
-Existing ESHB, IPA, MdC and deterministic translation endpoints remain available for compatibility.
-
-## Data and copyright
-
-The repository contains an original educational core lexicon and lesson curriculum. It is **not** a substitute for a professional Egyptological dictionary or a fully attested corpus.
-
-When expanding the dictionary, store provenance and use sources whose licensing permits the intended use. Do not scrape copyrighted dictionaries into the repository.
+Existing ESHB, IPA, MdC, dictionary, lesson, auth, history, feedback and knowledge endpoints remain available.
 
 ## Documentation
 
-- [`docs/END_TO_END_AUDIT.md`](docs/END_TO_END_AUDIT.md) — code/UI/logic audit and v2 rebuild decisions
-- [`docs/USER_JOURNEYS.md`](docs/USER_JOURNEYS.md) — device, role and workflow journeys
-- [`docs/SECURITY_PRIVACY.md`](docs/SECURITY_PRIVACY.md) — camera, microphone, sessions, AI and data handling
-- [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) — environment variables and deployment settings
+- [`docs/V3_GAP_AUDIT.md`](docs/V3_GAP_AUDIT.md) — complete code/logic/data/product gap audit and v3 decisions
+- [`docs/V3_RESEARCH_MODEL_GOVERNANCE.md`](docs/V3_RESEARCH_MODEL_GOVERNANCE.md) — correction, dataset, training and model-promotion rules
+- [`docs/END_TO_END_AUDIT.md`](docs/END_TO_END_AUDIT.md) — v2 audit/history
+- [`docs/USER_JOURNEYS.md`](docs/USER_JOURNEYS.md) — roles/devices/workflows
+- [`docs/SECURITY_PRIVACY.md`](docs/SECURITY_PRIVACY.md) — security/privacy model
+- [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) — deployment configuration
 
 ## Remaining research-grade work
 
-The v2 platform now has the interfaces and governance required for a serious product, but unrestricted historical translation still needs substantial scholarly data and models:
+The most important unsolved areas are now explicit:
 
-- complete Unicode/Gardiner/MdC sign inventory;
-- biliteral/triliteral sign recognition and phonetic-complement parsing;
-- determinative classifier;
-- period-aware Middle Egyptian morphology and syntax;
-- sign-quadrat layout engine using Egyptian Hieroglyph Format Controls;
-- source-attested lemma database with period, genre and object provenance;
-- training/evaluation corpus for damaged inscriptions and alternative restorations;
-- hieratic/demotic/Coptic expansion;
-- dedicated vision model for epigraphy rather than general-purpose image reasoning;
-- evaluation benchmarks reviewed by Egyptologists.
+- source-attested lemma/sense database with period, genre, object and line provenance;
+- complete licensed Gardiner/Unikemet sign catalog and variants;
+- full quadrat/group parser and layout renderer;
+- period-aware morphology/syntax, not only teaching patterns;
+- dedicated epigraphic vision weights and a licensed benchmark;
+- damaged-text restoration with uncertainty distributions;
+- historical vocalization data grounded in comparative/Coptic evidence;
+- hieratic, Demotic and Coptic layers;
+- artifact-level multilingual evaluation for English and Swahili;
+- PostgreSQL/object storage/audit/model registry for institutional multi-node use.
 
-Those are explicit next layers, not hidden limitations.
+v3 supplies safe integration points for those layers without claiming they already exist.
