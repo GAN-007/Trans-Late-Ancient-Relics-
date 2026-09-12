@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+tutor_progress.sqlite3
+data-runtime/
