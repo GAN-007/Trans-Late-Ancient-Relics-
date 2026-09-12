@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import json
 import re
 import unicodedata
@@ -38,43 +39,61 @@ GLYPH_TO_UNILITERAL = {v["glyph"]:k for k,v in UNILITERALS.items()}
 MDC_TO_TRANSLIT = {"A":"ꜣ","a":"ꜥ","H":"ḥ","x":"ḫ","X":"ẖ","S":"š","T":"ṯ","D":"ḏ"}
 TRANSLIT_TO_MDC = {v:k for k,v in MDC_TO_TRANSLIT.items()}
 
-def load_lexicon():
-    entries = []
-    for path in sorted((DATA / "lexicon").glob("*.json")):
-        entries.extend(json.loads(path.read_text(encoding="utf-8")))
+
+def load_lexicon() -> list[dict]:
+    entries: list[dict] = []
+    split_dir = DATA / "lexicon"
+    if split_dir.exists():
+        for path in sorted(split_dir.glob("*.json")):
+            entries.extend(json.loads(path.read_text(encoding="utf-8")))
+    else:
+        legacy = DATA / "lexicon.json"
+        if legacy.exists():
+            entries.extend(json.loads(legacy.read_text(encoding="utf-8")))
     return entries
 
-LEXICON = load_lexicon()
+
+BASE_LEXICON = load_lexicon()
+# Backwards-compatible constant. New request-time searches use current_lexicon().
+LEXICON = BASE_LEXICON
+
+
+def current_lexicon(include_runtime: bool = True) -> list[dict]:
+    entries = list(BASE_LEXICON)
+    if include_runtime:
+        try:
+            from .knowledge import approved_lexicon_entries
+            entries.extend(approved_lexicon_entries())
+        except Exception:
+            # Static linguistic features must stay available if the runtime DB is unavailable.
+            pass
+    return entries
+
 
 def normalize_transliteration(text: str) -> str:
-    text = unicodedata.normalize("NFC", text.strip())
-    # Normalize common i/j spellings only conservatively.
-    return text
+    return unicodedata.normalize("NFC", text.strip())
+
 
 def mdc_to_transliteration(mdc: str) -> str:
-    out = []
-    for ch in mdc:
-        out.append(MDC_TO_TRANSLIT.get(ch, ch))
-    return "".join(out)
+    return "".join(MDC_TO_TRANSLIT.get(ch, ch) for ch in mdc)
+
 
 def transliteration_to_mdc(text: str) -> str:
-    out = []
-    for ch in unicodedata.normalize("NFC", text):
-        out.append(TRANSLIT_TO_MDC.get(ch, ch))
-    return "".join(out)
+    return "".join(TRANSLIT_TO_MDC.get(ch, ch) for ch in unicodedata.normalize("NFC", text))
+
 
 def lookup_by_translit(text: str, pos: Optional[str]=None) -> list[dict]:
     q = normalize_transliteration(text).lower()
-    matches = []
-    for e in LEXICON:
-        if e["transliteration"].lower() == q and (pos is None or e["pos"] == pos):
-            matches.append(e)
-    return matches
+    return [
+        e for e in current_lexicon()
+        if e["transliteration"].lower() == q and (pos is None or e["pos"] == pos)
+    ]
+
 
 def search_dictionary(query: str="", language: str="all", pos: Optional[str]=None, limit: int=50) -> list[dict]:
     q = unicodedata.normalize("NFC", query.strip()).lower()
     scored = []
-    for entry in LEXICON:
+    for entry in current_lexicon():
         if pos and pos.lower() not in entry.get("pos","").lower():
             continue
         fields = []
@@ -84,7 +103,7 @@ def search_dictionary(query: str="", language: str="all", pos: Optional[str]=Non
             fields += entry.get("english", [])
         if language in ("all","swahili"):
             fields += entry.get("swahili", [])
-        hay = " | ".join(fields).lower()
+        hay = " | ".join(str(x) for x in fields).lower()
         if not q:
             score = 1
         elif entry["transliteration"].lower() == q:
@@ -98,16 +117,16 @@ def search_dictionary(query: str="", language: str="all", pos: Optional[str]=Non
         else:
             continue
         scored.append((score, entry))
-    scored.sort(key=lambda x:(-x[0], x[1]["transliteration"]))
-    return [x[1] for x in scored[:limit]]
+    scored.sort(key=lambda x:(-x[0], x[1]["transliteration"], x[1].get("pos", "")))
+    return [x[1] for x in scored[: max(1, min(limit, 500))]]
+
 
 def uniliteral_spell(transliteration: str) -> dict:
-    """Render a transliteration with uniliteral signs only.
+    """Render a transliteration with one-consonant signs only.
     This is a phonetic fallback, not a claim about authentic historical spelling.
     """
     glyphs, gardiner, unknown = [], [], []
     text = normalize_transliteration(transliteration)
-    # ignore punctuation used by Egyptologists for morpheme boundaries
     for ch in text:
         if ch in ".=-()[]{} ":
             if ch == " ":
@@ -130,25 +149,25 @@ def uniliteral_spell(transliteration: str) -> dict:
         "warning":"Uniliteral fallback represents consonantal values but may not match historically attested orthography."
     }
 
+
 def hieroglyphize_word(transliteration: str) -> dict:
     matches = lookup_by_translit(transliteration)
     canonical = [e for e in matches if e.get("hieroglyphs")]
     if canonical:
-        # If multiple entries share the same transliteration but one has canonical glyphs,
-        # surface all lexical senses while keeping the canonical sign form.
         e = canonical[0]
         return {
             "transliteration": transliteration,
             "hieroglyphs": e["hieroglyphs"],
             "gardiner": " ".join(e.get("gardiner",[])),
             "mdc": e.get("mdc"),
-            "authenticity":"lexicon_canonical",
+            "authenticity":"runtime_reviewed" if e.get("runtime_overlay") else "lexicon_canonical",
             "senses":[{"english":x.get("english",[]),"swahili":x.get("swahili",[]),"pos":x.get("pos")} for x in matches],
-            "warning":"Canonical/logographic form in this teaching lexicon; real inscriptions may use alternative spellings, phonetic complements, or determinatives."
+            "warning":"Selected teaching spelling; real inscriptions may use alternative spellings, phonetic complements, or determinatives."
         }
     result = uniliteral_spell(transliteration)
     result["senses"] = [{"english":x.get("english",[]),"swahili":x.get("swahili",[]),"pos":x.get("pos")} for x in matches]
     return result
+
 
 def hieroglyphize_phrase(transliteration: str) -> dict:
     words = [w for w in re.split(r"\s+", transliteration.strip()) if w]
@@ -157,8 +176,9 @@ def hieroglyphize_phrase(transliteration: str) -> dict:
         "transliteration": transliteration,
         "hieroglyphs":"  ".join(r["hieroglyphs"] for r in rendered),
         "words":rendered,
-        "warning":"Word order is preserved. Unicode output is horizontal; monumental block arrangement is a separate layout problem."
+        "warning":"Word order is preserved. Unicode output is horizontal; monumental quadrat layout is a separate layout problem."
     }
+
 
 def parse_uniliterals(glyphs: str) -> dict:
     translit = []
@@ -175,8 +195,9 @@ def parse_uniliterals(glyphs: str) -> dict:
         "hieroglyphs":glyphs,
         "transliteration":"".join(translit),
         "unknown_signs":unknown,
-        "warning":"This parser only treats the standard uniliteral signs as alphabetic values. Other hieroglyphs can be biliterals, triliterals, logograms, determinatives, or ambiguous signs and require sign-level analysis."
+        "warning":"This parser only treats the standard uniliteral signs as alphabetic values. Other signs may be biliterals, triliterals, logograms, determinatives or ambiguous signs and require sign-level analysis."
     }
+
 
 def uniliteral_table() -> list[dict]:
     return [{"value":k, **v} for k,v in UNILITERALS.items()]

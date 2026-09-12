@@ -1,0 +1,14 @@
+{
+  "name": "Trans-Late Ancient Relics",
+  "short_name": "Ancient Relics",
+  "description": "Ancient Egyptian learning, contextual translation, voice and live camera analysis.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4efe5",
+  "theme_color": "#21180f",
+  "lang": "en",
+  "categories": ["education", "utilities", "reference"],
+  "icons": [
+    {"src": "/static/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}

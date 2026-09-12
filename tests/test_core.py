@@ -36,7 +36,7 @@ def test_dictionary_translation():
 
 
 def test_learning_data_loaded():
-    from app.egyptian import LEXICON
+    from app.egyptian import BASE_LEXICON
     from app.pedagogy import lessons
-    assert len(LEXICON) >= 140
+    assert len(BASE_LEXICON) >= 140
     assert len(lessons()) == 26
