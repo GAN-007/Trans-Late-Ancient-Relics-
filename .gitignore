@@ -1,6 +1,9 @@
+.venv/
 __pycache__/
 .pytest_cache/
-.venv/
 *.pyc
-tutor_progress.sqlite3
+*.pyo
+.env
 data-runtime/
+*.sqlite3
+.DS_Store

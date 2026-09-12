@@ -1,1 +1,27 @@
-{"name":"ESHB Ancient Egyptian Tutor","focus":"Middle Egyptian","layers":[{"id":"eshb_orthography","purpose":"Reversible English/Swahili orthography ↔ ESHB","reversible":true},{"id":"eshb_ipa","purpose":"Reversible IPA ↔ ESHB with Unicode fallback","reversible":true},{"id":"egyptian_script","purpose":"Egyptological transliteration ↔ sign representation","reversible":"partial; historical spelling is context-sensitive"},{"id":"lexicon","purpose":"Egyptian ↔ English/Swahili lexical meanings","reversible":"sense-dependent"},{"id":"grammar","purpose":"Morphology/syntax and pedagogical translation","reversible":false},{"id":"pedagogy","purpose":"Lessons, quizzes, learner progress","reversible":false}],"translation_pipeline":["meaning","lexical selection","morphology","syntax","transliteration","orthography","determinatives/phonetic complements","layout"],"reverse_pipeline":["direction","sign segmentation","sign values/functions","transliteration","segmentation","morphology","syntax","sense disambiguation","translation"]}
+{
+  "name": "Trans-Late Ancient Relics",
+  "version": "2.0.0",
+  "focus": "Middle Egyptian with English, Swahili, IPA and ESHB bridges",
+  "principles": [
+    "meaning before substitution",
+    "ambiguity is data, not an error to hide",
+    "historical claims require provenance",
+    "AI proposals require human review before lexicon promotion",
+    "camera and microphone are explicit permission-gated user actions"
+  ],
+  "layers": [
+    {"id":"eshb_orthography","purpose":"Reversible English/Swahili orthography ↔ ESHB","reversible":true,"offline":true},
+    {"id":"eshb_ipa","purpose":"Reversible IPA ↔ ESHB","reversible":true,"offline":true},
+    {"id":"egyptian_script","purpose":"Transliteration, uniliterals, canonical spellings, MdC","reversible":"partial","offline":true},
+    {"id":"linguistics","purpose":"Intent, morphology, classroom pronunciation, ambiguity","reversible":false,"offline":true},
+    {"id":"translation","purpose":"Candidate-based English/Swahili/Middle Egyptian analysis","reversible":false,"offline":"curated core"},
+    {"id":"live_multimodal","purpose":"Camera, speech recognition, read-aloud and live translation","reversible":false,"offline":"speech/browser dependent; vision requires configured provider"},
+    {"id":"ai_review","purpose":"Vendor-neutral second-pass translation and vision analysis","reversible":false,"offline":false},
+    {"id":"knowledge_loop","purpose":"Feedback → unresolved terms → AI/human proposals → reviewer approval → community lexicon","reversible":false,"offline":"review storage is local; AI proposal generation optional"},
+    {"id":"identity","purpose":"Accounts, role-based access, sessions, audit trail","reversible":false,"offline":true},
+    {"id":"pedagogy","purpose":"Lessons, quizzes and synchronized progress","reversible":false,"offline":"app shell and local guest progress"}
+  ],
+  "roles": ["guest","learner","contributor","reviewer","admin"],
+  "translation_pipeline": ["input modality","intent/context","lexical candidates","morphology","syntax/grammar","historical spelling","candidate ranking","confidence/provenance","output/read-aloud"],
+  "reverse_inscription_pipeline": ["camera/image","reading direction","sign candidates","sign function","transliteration candidates","word segmentation","morphology","syntax","sense disambiguation","English/Swahili candidates"]
+}

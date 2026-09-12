@@ -2,148 +2,280 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>ESHB • Ancient Egyptian Tutor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16100a">
+  <meta name="description" content="Live Ancient Egyptian learning, hieroglyph translation, English/Swahili ESHB and context-aware linguistic analysis.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/styles.css">
+  <title>Trans-Late Ancient Relics</title>
 </head>
 <body>
-<header>
-  <div>
-    <div class="eyebrow">MIDDLE EGYPTIAN LEARNING SYSTEM</div>
-    <h1>𓋹 ESHB Ancient Egyptian Tutor</h1>
-    <p>English ⇄ ESHB • Swahili ⇄ ESHB • IPA ⇄ ESHB • Transliteration ⇄ Hieroglyphs • Dictionary • Grammar • Lessons</p>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="appbar">
+  <div class="brand-wrap">
+    <div class="brand-glyph" aria-hidden="true">𓋹</div>
+    <div>
+      <div class="eyebrow">ANCIENT LANGUAGE INTELLIGENCE</div>
+      <h1>Trans-Late Ancient Relics</h1>
+      <p class="tagline">Meaning before substitution. Context before certainty.</p>
+    </div>
+  </div>
+  <div class="status-cluster">
+    <span id="networkStatus" class="status-pill">● online</span>
+    <span id="aiStatus" class="status-pill">AI checking…</span>
+    <button id="installBtn" class="ghost hidden" type="button">Install app</button>
+    <button id="accountQuickBtn" class="ghost" type="button">Guest</button>
   </div>
 </header>
 
-<nav id="tabs">
-  <button data-tab="bridge" class="active">ESHB Bridge</button>
-  <button data-tab="egyptian">Egyptian Script</button>
-  <button data-tab="translate">Translator</button>
-  <button data-tab="dictionary">Dictionary</button>
+<nav id="tabs" class="primary-nav" aria-label="Main navigation">
+  <button data-tab="home" class="active">Overview</button>
+  <button data-tab="live">Live Lens</button>
+  <button data-tab="translate">Translate</button>
+  <button data-tab="bridge">ESHB</button>
   <button data-tab="learn">Learn</button>
+  <button data-tab="dictionary">Dictionary</button>
   <button data-tab="signs">Signs</button>
+  <button data-tab="community">Community</button>
+  <button data-tab="account">Account</button>
   <button data-tab="about">About</button>
 </nav>
 
-<main>
-<section id="bridge" class="tab active">
-  <div class="grid two">
-    <article class="card">
-      <h2>English / Swahili → ESHB</h2>
-      <label>Text</label>
-      <textarea id="bridgeInput" placeholder="Habari yako / My name is George">Habari yako</textarea>
-      <div class="row">
-        <select id="bridgeLang"><option value="auto">Auto</option><option value="english">English</option><option value="swahili">Swahili</option></select>
-        <button id="encodeBtn">Encode</button>
+<main id="main">
+<section id="home" class="tab active">
+  <div class="hero card hero-grid">
+    <div>
+      <div class="eyebrow">VERSION 2.0</div>
+      <h2>From image, voice or text to a traceable linguistic analysis</h2>
+      <p class="lead">Use the camera on an inscription, speak a phrase, type English or Swahili, inspect multiple translation candidates, hear readable output, and learn why a translation is uncertain instead of receiving a single unexplained answer.</p>
+      <div class="action-row">
+        <button class="nav-jump" data-target="live">Open Live Lens</button>
+        <button class="nav-jump secondary" data-target="translate">Translate text</button>
       </div>
-      <label>Strict reversible form</label>
-      <textarea id="bridgeStrict" class="glyph" readonly></textarea>
-      <label>Display form</label>
-      <div id="bridgeDisplay" class="output glyph big"></div>
+    </div>
+    <div class="hero-glyphs" aria-hidden="true">𓄤 𓋹 𓊵 𓂋 𓈖 𓅓</div>
+  </div>
+
+  <div class="grid three feature-grid">
+    <article class="card"><span class="feature-icon">◉</span><h3>Live camera translation</h3><p>Explicit camera permission, frame-by-frame analysis, reading direction, sign candidates and uncertainty. Cloud vision is opt-in and only runs after you start it.</p></article>
+    <article class="card"><span class="feature-icon">◌</span><h3>Voice and read-aloud</h3><p>Use device speech recognition where available, send recognized English/Swahili text through the translation engine, and read results aloud with browser speech synthesis.</p></article>
+    <article class="card"><span class="feature-icon">◇</span><h3>Context and ambiguity</h3><p>Translations carry confidence, rationale, literal meaning, alternatives, assumptions and provenance so nuance is visible rather than silently collapsed.</p></article>
+    <article class="card"><span class="feature-icon">𓏭</span><h3>ESHB reversible bridge</h3><p>English, Swahili and IPA can be encoded into a modern reversible hieroglyphic bridge without pretending the result is historical Middle Egyptian.</p></article>
+    <article class="card"><span class="feature-icon">𓏤</span><h3>Ancient Egyptian learning</h3><p>Twenty-six structured Middle Egyptian lessons, vocabulary practice, sign tables, transliteration, MdC and a growing reviewed dictionary.</p></article>
+    <article class="card"><span class="feature-icon">△</span><h3>Human-reviewed AI growth</h3><p>Repeated unknown terms and user feedback form a research queue. AI can suggest entries, but reviewers must approve them before they join the learner lexicon.</p></article>
+  </div>
+
+  <article class="card">
+    <h3>Translation integrity pipeline</h3>
+    <div class="pipeline" aria-label="Translation pipeline">
+      <span>meaning / image / speech</span><b>→</b><span>sign & lexical analysis</span><b>→</b><span>grammar</span><b>→</b><span>candidate readings</span><b>→</b><span>confidence + provenance</span><b>→</b><span>English / Swahili / Egyptian</span>
+    </div>
+  </article>
+</section>
+
+<section id="live" class="tab">
+  <div class="section-head">
+    <div><div class="eyebrow">LIVE MULTIMODAL MODE</div><h2>Live Lens & Conversation</h2></div>
+    <span id="liveSessionStatus" class="status-pill">idle</span>
+  </div>
+  <div class="grid live-grid">
+    <article class="card camera-card">
+      <div class="card-head"><h3>Camera</h3><span id="cameraStatus" class="status-pill">camera off</span></div>
+      <div class="video-shell">
+        <video id="cameraVideo" playsinline autoplay muted></video>
+        <canvas id="cameraCanvas" class="hidden"></canvas>
+        <div id="cameraPlaceholder" class="camera-placeholder">
+          <strong>Camera is off</strong>
+          <span>The browser will ask permission only when you press Start camera.</span>
+        </div>
+        <div id="visionOverlay" class="vision-overlay" aria-live="polite"></div>
+      </div>
+      <div class="row wrap">
+        <button id="startCameraBtn">Start camera</button>
+        <button id="stopCameraBtn" class="secondary" disabled>Stop</button>
+        <button id="scanFrameBtn" class="secondary" disabled>Analyze frame</button>
+        <label class="toggle"><input id="autoScanToggle" type="checkbox" disabled><span>Auto scan</span></label>
+      </div>
+      <div class="form-grid two-col">
+        <label>Translate detected text into<select id="visionTarget"><option value="english">English</option><option value="swahili">Swahili</option></select></label>
+        <label>Context<input id="visionContext" placeholder="Temple wall, funerary stela, museum object…"></label>
+      </div>
+      <p class="muted small">Camera APIs require HTTPS or localhost. Frames are sent to a configured vision provider only while analysis is active. Without a provider, the app reports that honestly instead of fabricating a reading.</p>
     </article>
 
+    <article class="card conversation-card">
+      <div class="card-head"><h3>Speak / listen</h3><span id="speechStatus" class="status-pill">mic idle</span></div>
+      <div class="form-grid two-col">
+        <label>Speech language<select id="speechSource"><option value="english">English</option><option value="swahili">Swahili</option></select></label>
+        <label>Translate to<select id="speechTarget"><option value="egyptian">Middle Egyptian</option><option value="english">English</option><option value="swahili">Swahili</option></select></label>
+      </div>
+      <textarea id="speechTranscript" placeholder="Speech transcript appears here…"></textarea>
+      <div class="row wrap">
+        <button id="startMicBtn">Start microphone</button>
+        <button id="stopMicBtn" class="secondary" disabled>Stop</button>
+        <button id="translateSpeechBtn" class="secondary">Translate transcript</button>
+        <button id="speakResultBtn" class="secondary">Read result aloud</button>
+      </div>
+      <div id="speechSupport" class="muted small"></div>
+      <div id="liveTranslation" class="candidate-stack" aria-live="polite"></div>
+    </article>
+  </div>
+
+  <article class="card live-result-card">
+    <div class="card-head"><h3>Vision analysis stream</h3><button id="clearLiveBtn" class="ghost">Clear</button></div>
+    <div id="visionResults" class="candidate-stack" aria-live="polite"><p class="muted">No frame analyzed yet.</p></div>
+  </article>
+</section>
+
+<section id="translate" class="tab">
+  <div class="section-head"><div><div class="eyebrow">CONTEXT-AWARE TRANSLATION</div><h2>Translate with alternatives, not hidden assumptions</h2></div></div>
+  <div class="grid two">
     <article class="card">
-      <h2>Strict ESHB → English / Swahili spelling</h2>
-      <p class="muted">Decode the strict form. Separators preserve information; display-only glyph strings can be ambiguous.</p>
-      <textarea id="decodeInput" class="glyph" placeholder="𓉔·𓄿·𓃀·𓄿·𓂋·𓇋"></textarea>
+      <div class="form-grid two-col">
+        <label>From<select id="sourceLang"><option value="english">English</option><option value="swahili">Swahili</option><option value="egyptian">Egyptian transliteration</option></select></label>
+        <label>To<select id="targetLang"><option value="egyptian">Middle Egyptian</option><option value="english">English</option><option value="swahili">Swahili</option></select></label>
+      </div>
+      <label>Text<textarea id="translateInput">I am a scribe</textarea></label>
+      <label>Context<textarea id="translateContext" class="short" placeholder="Who is speaking? Period? Object type? Religious/legal/everyday context?"></textarea></label>
+      <div class="form-grid two-col">
+        <label>Intended speech act / meaning<input id="translateIntent" placeholder="identity, command, greeting, offering…"></label>
+        <label>Translation style<select id="translateMode"><option value="careful">Careful / evidence-first</option><option value="literal">Literal</option><option value="natural">Natural</option></select></label>
+      </div>
+      <label class="toggle"><input id="useAiToggle" type="checkbox" checked><span>Use configured AI as a second-pass reviewer</span></label>
+      <div class="row wrap"><button id="translateBtn">Translate / analyze</button><button id="speakTranslateBtn" class="secondary">Read best result</button></div>
+      <p class="warning">Historical Egyptian is never reduced to A→glyph substitution here. Unsupported sentences return analysis and unknown terms instead of invented certainty.</p>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>Translation result</h3><span id="translationConfidence" class="status-pill">not translated</span></div>
+      <div id="translationGlyphs" class="glyph huge"></div>
+      <div id="translationCandidates" class="candidate-stack"></div>
+      <details><summary>Raw linguistic analysis</summary><pre id="translationOutput"></pre></details>
+      <div id="feedbackPanel" class="feedback-panel hidden">
+        <span>Was this useful?</span>
+        <button class="feedback-btn ghost" data-rating="correct">Correct</button>
+        <button class="feedback-btn ghost" data-rating="partly_correct">Partly</button>
+        <button class="feedback-btn ghost" data-rating="wrong">Wrong</button>
+        <button class="feedback-btn ghost" data-rating="uncertain">Unsure</button>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section id="bridge" class="tab">
+  <div class="section-head"><div><div class="eyebrow">MODERN REVERSIBLE BRIDGE</div><h2>English / Swahili / IPA ⇄ ESHB</h2></div></div>
+  <div class="grid two">
+    <article class="card">
+      <h3>English / Swahili → ESHB</h3>
+      <textarea id="bridgeInput">Habari yako</textarea>
+      <div class="row"><select id="bridgeLang"><option value="auto">Auto</option><option value="english">English</option><option value="swahili">Swahili</option></select><button id="encodeBtn">Encode</button></div>
+      <label>Strict reversible form<textarea id="bridgeStrict" class="glyph" readonly></textarea></label>
+      <label>Display form<div id="bridgeDisplay" class="output glyph big"></div></label>
+      <button id="speakBridgeBtn" class="secondary">Read source aloud</button>
+    </article>
+    <article class="card">
+      <h3>Strict ESHB → spelling</h3>
+      <textarea id="decodeInput" class="glyph"></textarea>
       <button id="decodeBtn">Decode</button>
       <div id="decodeOutput" class="output"></div>
-
       <hr>
-      <h2>IPA ↔ ESHB</h2>
+      <h3>IPA ↔ ESHB</h3>
       <textarea id="ipaInput" placeholder="hɑˈbɑri"></textarea>
-      <button id="ipaEncodeBtn">Encode IPA</button>
+      <div class="row wrap"><button id="ipaEncodeBtn">Encode IPA</button><button id="ipaDecodeBtn" class="secondary">Decode strict IPA</button></div>
       <textarea id="ipaStrict" class="glyph" readonly></textarea>
-      <button id="ipaDecodeBtn">Decode strict IPA form</button>
       <div id="ipaOutput" class="output"></div>
     </article>
   </div>
 </section>
 
-<section id="egyptian" class="tab">
-  <div class="grid two">
-    <article class="card">
-      <h2>Egyptological transliteration → hieroglyphs</h2>
-      <p class="muted">Known lexicon entries use selected canonical/logographic forms. Unknown words fall back to uniliteral spelling and are explicitly marked as such.</p>
-      <textarea id="translitInput">nfr pr</textarea>
-      <button id="hieroglyphizeBtn">Render</button>
-      <div id="hieroOutput" class="output glyph huge"></div>
-      <pre id="hieroAnalysis"></pre>
-    </article>
-    <article class="card">
-      <h2>Uniliteral hieroglyphs → transliteration</h2>
-      <textarea id="glyphInput" class="glyph">𓈖𓆑𓂋</textarea>
-      <button id="parseGlyphBtn">Parse uniliterals</button>
-      <div id="glyphOutput" class="output"></div>
-      <hr>
-      <h2>MdC converter</h2>
-      <input id="mdcInput" value="sDm">
-      <button id="mdcBtn">MdC → transliteration</button>
-      <div id="mdcOutput" class="output"></div>
-    </article>
+<section id="learn" class="tab">
+  <div class="section-head"><div><div class="eyebrow">STRUCTURED COURSE</div><h2>Learn Middle Egyptian</h2></div><span id="progressStatus" class="status-pill">sign in to sync progress</span></div>
+  <div class="grid learn-grid">
+    <aside class="card lesson-sidebar"><div class="card-head"><h3>Lessons</h3><span id="lessonCount" class="pill"></span></div><div id="lessonList"></div></aside>
+    <article class="card" id="lessonPane"><h3>Select a lesson</h3><p>Move from sign mechanics and transliteration to grammar, verbal forms and inscription analysis.</p></article>
   </div>
 </section>
 
-<section id="translate" class="tab">
-  <article class="card">
-    <h2>Meaning → Middle Egyptian → hieroglyphs</h2>
-    <p class="warning">This translator refuses to disguise unsupported word substitution as authentic Egyptian. Exact dictionary entries and verified teaching templates receive translations; unsupported sentences receive lexical analysis plus unresolved words.</p>
-    <div class="row">
-      <select id="sourceLang"><option value="english">English</option><option value="swahili">Swahili</option><option value="egyptian">Egyptian transliteration</option></select>
-      <select id="targetLang"><option value="egyptian">Middle Egyptian</option><option value="english">English</option><option value="swahili">Swahili</option></select>
-    </div>
-    <textarea id="translateInput">I am a scribe</textarea>
-    <button id="translateBtn">Translate / Analyze</button>
-    <div id="translationGlyphs" class="glyph huge"></div>
-    <pre id="translationOutput"></pre>
-  </article>
-</section>
-
 <section id="dictionary" class="tab">
+  <div class="section-head"><div><div class="eyebrow">TRILINGUAL LEXICON</div><h2>Egyptian ⇄ English ⇄ Swahili</h2></div></div>
   <article class="card">
-    <h2>Trilingual learner dictionary</h2>
-    <div class="row">
-      <input id="dictQuery" placeholder="Search: good / nzuri / nfr">
-      <select id="dictLang"><option value="all">All fields</option><option value="english">English</option><option value="swahili">Swahili</option><option value="egyptian">Egyptian</option></select>
-      <button id="dictBtn">Search</button>
-    </div>
+    <div class="row wrap"><input id="dictQuery" placeholder="Search: good / nzuri / nfr"><select id="dictLang"><option value="all">All fields</option><option value="english">English</option><option value="swahili">Swahili</option><option value="egyptian">Egyptian</option></select><button id="dictBtn">Search</button></div>
     <div id="dictResults"></div>
   </article>
 </section>
 
-<section id="learn" class="tab">
-  <div class="grid learn-grid">
-    <aside class="card">
-      <h2>26-lesson course</h2>
-      <div id="lessonList"></div>
-    </aside>
-    <article class="card" id="lessonPane">
-      <h2>Select a lesson</h2>
-      <p>The curriculum moves from sign mechanics to nouns, pronouns, sentence types, verbal forms and real-inscription workflow.</p>
+<section id="signs" class="tab">
+  <div class="section-head"><div><div class="eyebrow">SIGN REFERENCE</div><h2>Core one-consonant signs</h2></div></div>
+  <div class="grid two">
+    <article class="card"><div id="signTable" class="tablewrap"></div></article>
+    <article class="card">
+      <h3>Transliteration → hieroglyphs</h3><textarea id="translitInput">nfr pr</textarea><button id="hieroglyphizeBtn">Render</button><div id="hieroOutput" class="output glyph huge"></div><pre id="hieroAnalysis"></pre>
+      <hr><h3>Uniliterals → transliteration</h3><textarea id="glyphInput" class="glyph">𓈖𓆑𓂋</textarea><button id="parseGlyphBtn">Parse</button><div id="glyphOutput" class="output"></div>
+      <hr><h3>Manuel de Codage</h3><div class="row"><input id="mdcInput" value="sDm"><button id="mdcBtn">MdC → transliteration</button></div><div id="mdcOutput" class="output"></div>
     </article>
   </div>
 </section>
 
-<section id="signs" class="tab">
-  <article class="card">
-    <h2>Core one-consonant sign list</h2>
-    <div id="signTable" class="tablewrap"></div>
-  </article>
+<section id="community" class="tab">
+  <div class="section-head"><div><div class="eyebrow">REVIEW-GATED KNOWLEDGE GROWTH</div><h2>Contribute without poisoning the dictionary</h2></div><span id="communityRole" class="status-pill">guest</span></div>
+  <div class="grid two">
+    <article class="card">
+      <h3>Propose a lexical entry</h3>
+      <p class="muted">Contributor role required. Every proposal remains pending until a reviewer approves it.</p>
+      <form id="proposalForm">
+        <label>Transliteration<input id="proposalTranslit" required placeholder="nfr"></label>
+        <label>English glosses<input id="proposalEnglish" required placeholder="good, beautiful"></label>
+        <label>Swahili glosses<input id="proposalSwahili" required placeholder="nzuri, mrembo"></label>
+        <label>Part of speech<input id="proposalPos" required placeholder="adjective"></label>
+        <label>Hieroglyphs<input id="proposalGlyphs" class="glyph" placeholder="𓄤"></label>
+        <label>Gardiner codes<input id="proposalGardiner" placeholder="F35"></label>
+        <label>Evidence / source note<textarea id="proposalEvidence" class="short" placeholder="Citation, inscription, museum record or scholarly source"></textarea></label>
+        <button type="submit">Submit for review</button>
+      </form>
+      <div id="proposalMessage" class="output"></div>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>Reviewer queue</h3><button id="refreshReviewBtn" class="secondary">Refresh</button></div>
+      <div id="reviewQueue"><p class="muted">Reviewer role required.</p></div>
+      <hr>
+      <h3>Learning-loop insights</h3>
+      <div class="row wrap"><button id="loadInsightsBtn" class="secondary">Load insights</button><button id="runAiResearchBtn" class="secondary">Generate AI research proposals</button></div>
+      <pre id="learningInsights"></pre>
+    </article>
+  </div>
+</section>
+
+<section id="account" class="tab">
+  <div class="section-head"><div><div class="eyebrow">IDENTITY & PERMISSIONS</div><h2>Account</h2></div></div>
+  <div class="grid two">
+    <article class="card">
+      <div id="accountSummary"><p>You are using guest mode.</p></div>
+      <button id="logoutBtn" class="danger hidden">Sign out</button>
+      <hr>
+      <h3>Sign in</h3>
+      <form id="loginForm"><label>Email<input id="loginEmail" type="email" autocomplete="email" required></label><label>Password<input id="loginPassword" type="password" autocomplete="current-password" required></label><button type="submit">Sign in</button></form>
+      <div id="loginMessage" class="output"></div>
+    </article>
+    <article class="card">
+      <h3>Create learner account</h3>
+      <form id="registerForm"><label>Name<input id="registerName" autocomplete="name" required></label><label>Email<input id="registerEmail" type="email" autocomplete="email" required></label><label>Password<input id="registerPassword" type="password" minlength="10" autocomplete="new-password" required></label><button type="submit">Create account</button></form>
+      <p class="muted small">New accounts are learners. Contributor, reviewer and administrator permissions are explicitly granted by an administrator.</p>
+      <div id="registerMessage" class="output"></div>
+    </article>
+  </div>
+  <article class="card"><h3>My translation history</h3><button id="loadHistoryBtn" class="secondary">Load history</button><div id="historyResults"></div></article>
 </section>
 
 <section id="about" class="tab">
-  <article class="card">
-    <h2>What this system is — and is not</h2>
-    <p><strong>ESHB</strong> is a modern reversible bridge for English/Swahili spelling and IPA. It is deliberately separate from historical Egyptian.</p>
-    <p><strong>Middle Egyptian mode</strong> teaches the ancient language. Historical inscriptions use consonantal phonograms, multi-consonant signs, logograms, determinatives, phonetic complements and artistic sign grouping. Vowels are not normally written, so exact Middle Egyptian pronunciation is not fully recoverable.</p>
-    <p><strong>Translation policy:</strong> the software reports confidence and ambiguity. It does not invent Egyptian words when the lexicon or grammar does not support them.</p>
-    <h3>Research references</h3>
-    <div id="references"></div>
-  </article>
+  <div class="grid two">
+    <article class="card"><div class="eyebrow">CAPABILITY REPORT</div><h2>Your device</h2><div id="capabilityReport"></div><h3>Design principles</h3><ul><li>Camera and microphone are permission-gated and user-started.</li><li>Deterministic ESHB and dictionary features remain useful without AI.</li><li>AI suggestions are secondary evidence, not silently authoritative.</li><li>Historical pronunciation is distinguished from classroom/readable pronunciation.</li><li>Mobile, tablet and desktop share the same API and responsive interface.</li></ul></article>
+    <article class="card"><div class="eyebrow">SOURCES & LIMITS</div><h2>Research references</h2><div id="references"></div></article>
+  </div>
 </section>
 </main>
 
-<footer>ESHB Tutor v1.0 • Focus: Middle Egyptian • Educational software with explicit uncertainty</footer>
-<script src="/static/app.js"></script>
+<div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+<footer><strong>Trans-Late Ancient Relics v2.0</strong><span>Middle Egyptian • English • Swahili • IPA • ESHB</span><span>Evidence, ambiguity and human review are part of the product.</span></footer>
+<script src="/static/app.js" defer></script>
 </body>
 </html>

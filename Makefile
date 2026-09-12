@@ -1,4 +1,4 @@
-.PHONY: install run test check docker-build docker-run
+.PHONY: install run test compile check docker
 
 install:
 	python -m pip install -r requirements.txt
@@ -7,14 +7,12 @@ run:
 	uvicorn app.main:app --reload
 
 test:
-	python -m pytest -q
+	pytest -q
 
-check:
+compile:
 	python -m compileall -q app cli.py
-	python -m pytest -q
 
-docker-build:
-	docker build -t eshb-ancient-egyptian-tutor .
+check: compile test
 
-docker-run:
-	docker run --rm -p 8000:8000 eshb-ancient-egyptian-tutor
+docker:
+	docker compose up --build

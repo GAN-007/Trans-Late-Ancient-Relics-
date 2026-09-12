@@ -1,14 +1,24 @@
 services:
-  tutor:
+  app:
     build: .
     ports:
       - "8000:8000"
-    volumes:
-      - tutor_data:/app/data-runtime
     environment:
-      - ESHB_ENV=production
-      - ESHB_RUNTIME_DIR=/app/data-runtime
+      ESHB_ENV: production
+      ESHB_RUNTIME_DIR: /app/data-runtime
+      ESHB_SECURE_COOKIES: "false"
+      ESHB_ALLOW_REGISTRATION: "true"
+      # Set these in a local .env or secret manager for production:
+      # ESHB_ADMIN_EMAIL: admin@example.com
+      # ESHB_ADMIN_PASSWORD: change-this-to-a-long-password
+      # ESHB_AI_ENDPOINT: https://your-ai-gateway.example/v1/translate-review
+      # ESHB_AI_API_KEY: secret
+      # ESHB_VISION_ENDPOINT: https://your-ai-gateway.example/v1/vision
+      # ESHB_VISION_API_KEY: secret
+      # ESHB_AUTO_RESEARCH_ENABLED: "true"
+    volumes:
+      - eshb_runtime:/app/data-runtime
     restart: unless-stopped
 
 volumes:
-  tutor_data:
+  eshb_runtime:

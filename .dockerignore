@@ -4,6 +4,5 @@
 __pycache__
 .pytest_cache
 *.pyc
-*.pyo
-*.pyd
-tutor_progress.sqlite3
+data-runtime
+*.sqlite3
