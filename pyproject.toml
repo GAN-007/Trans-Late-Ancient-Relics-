@@ -1,7 +1,7 @@
 [project]
 name = "trans-late-ancient-relics"
-version = "2.0.0"
-description = "Ancient Egyptian learning, contextual translation, live camera analysis, voice access and reversible ESHB tools."
+version = "3.0.0"
+description = "Evidence-aware Ancient Egyptian epigraphy, contextual translation, live vision/voice interaction and reversible ESHB tools."
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115,<1.0",

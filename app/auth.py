@@ -15,10 +15,17 @@ from .runtime import connect, env_bool
 ROLES = ("learner", "contributor", "reviewer", "admin")
 ROLE_RANK = {role: index for index, role in enumerate(ROLES)}
 PERMISSIONS = {
-    "learner": {"progress:write", "history:write", "feedback:create"},
-    "contributor": {"progress:write", "history:write", "feedback:create", "proposal:create"},
-    "reviewer": {"progress:write", "history:write", "feedback:create", "proposal:create", "proposal:review", "knowledge:inspect"},
-    "admin": {"progress:write", "history:write", "feedback:create", "proposal:create", "proposal:review", "knowledge:inspect", "users:manage", "knowledge:run_ai"},
+    "learner": {"progress:write", "history:write", "feedback:create", "vision_correction:create"},
+    "contributor": {"progress:write", "history:write", "feedback:create", "vision_correction:create", "proposal:create"},
+    "reviewer": {
+        "progress:write", "history:write", "feedback:create", "vision_correction:create", "proposal:create",
+        "proposal:review", "knowledge:inspect", "vision_correction:review", "dataset:inspect",
+    },
+    "admin": {
+        "progress:write", "history:write", "feedback:create", "vision_correction:create", "proposal:create",
+        "proposal:review", "knowledge:inspect", "vision_correction:review", "dataset:inspect", "dataset:export",
+        "users:manage", "knowledge:run_ai",
+    },
 }
 SESSION_COOKIE = "eshb_session"
 SESSION_DAYS = 30
@@ -58,6 +65,8 @@ def init_auth_db() -> None:
         CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
         """
     )
+    # Remove expired sessions opportunistically at startup.
+    conn.execute("DELETE FROM sessions WHERE expires_at<=?", (_iso(_now()),))
     conn.commit()
     conn.close()
     ensure_bootstrap_admin()
@@ -66,7 +75,6 @@ def init_auth_db() -> None:
 def _password_hash(password: str, salt: bytes | None = None) -> str:
     if salt is None:
         salt = secrets.token_bytes(16)
-    # stdlib scrypt gives us a memory-hard password KDF without another runtime dependency.
     derived = hashlib.scrypt(password.encode("utf-8"), salt=salt, n=2**14, r=8, p=1, dklen=32)
     return f"scrypt$16384$8$1${salt.hex()}${derived.hex()}"
 
@@ -247,5 +255,4 @@ def ensure_bootstrap_admin() -> None:
     try:
         create_user(username, password, os.environ.get("ESHB_BOOTSTRAP_ADMIN_DISPLAY_NAME", "Administrator"), role="admin")
     except ValueError:
-        # Startup should remain available even if a stale/malformed bootstrap value is supplied.
         return

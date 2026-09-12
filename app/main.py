@@ -5,10 +5,18 @@ import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, WebSocket
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from .active_learning import (
+    approved_dataset_manifest,
+    collection_policy,
+    init_active_learning_db,
+    list_vision_corrections,
+    review_vision_correction,
+    submit_vision_correction,
+)
 from .ai import ai_status
 from .auth import (
     authenticate,
@@ -34,45 +42,51 @@ from .egyptian import (
     transliteration_to_mdc,
     uniliteral_table,
 )
+from .epigraphy import analyze_hieroglyphic_text, epigraphy_capabilities
 from .eshb import codebook_rows, decode, decode_ipa, encode, encode_ipa
-from .history import clear_history, init_history_db, list_history, save_history
 from .feedback import create_feedback, init_feedback_db, list_feedback
+from .history import clear_history, init_history_db, list_history, save_history
 from .knowledge import (
     create_proposal,
     init_knowledge_db,
     list_proposals,
     review_proposal,
-    update_proposal_evidence,
     top_unresolved,
+    update_proposal_evidence,
 )
 from .learning_loop import background_loop, knowledge_loop_status, run_knowledge_cycle
 from .models import (
     ContextualTranslationRequest,
+    CorrectionReviewRequest,
     ESHBEncodeRequest,
     FeedbackRequest,
-    KnowledgeProposalRequest,
     KnowledgeEvidenceRequest,
+    KnowledgeProposalRequest,
     KnowledgeReviewRequest,
     KnowledgeRunRequest,
     LoginRequest,
     ProgressRequest,
+    PronunciationRequest,
     RegisterRequest,
     RoleUpdateRequest,
     TextRequest,
     TranslationRequest,
+    VisionCorrectionRequest,
     VisionRequest,
 )
+from .morphology import analyze_transliteration
 from .pedagogy import ensure_progress_db, get_lesson, get_progress, lessons, random_vocab_quiz, save_progress
 from .runtime import env_bool
-from .security import check_rate_limit, security_headers
-from .speech import classroom_reading
+from .security import enforce_unsafe_origin, security_headers
+from .speech import classroom_reading, pronunciation_analysis
+from .streaming import conversation_socket, streaming_capabilities, vision_socket
 from .translator import egyptian_to_modern, translate_phrase, translate_word
-from .vision import analyze_frame
+from .vision import analyze_frame, vision_status
 
 BASE = Path(__file__).parent
 STATIC = BASE / "static"
 DATA = BASE / "data"
-APP_VERSION = "2.0.0"
+APP_VERSION = "3.0.0"
 
 
 @asynccontextmanager
@@ -81,6 +95,7 @@ async def lifespan(app: FastAPI):
     init_knowledge_db()
     init_history_db()
     init_feedback_db()
+    init_active_learning_db()
     ensure_progress_db()
     stop_event = asyncio.Event()
     task = None
@@ -102,14 +117,20 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Trans-Late Ancient Relics",
     version=APP_VERSION,
-    description="Live Ancient Egyptian learning, contextual translation, camera analysis and reversible ESHB tools.",
+    description="Evidence-aware Ancient Egyptian learning, epigraphy, contextual translation, live camera analysis, voice and reversible ESHB tools.",
     lifespan=lifespan,
 )
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
 @app.middleware("http")
-async def add_security_headers(request: Request, call_next):
+async def request_security(request: Request, call_next):
+    try:
+        enforce_unsafe_origin(request)
+    except HTTPException as exc:
+        response = JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+        security_headers(response)
+        return response
     response = await call_next(request)
     security_headers(response)
     return response
@@ -139,6 +160,7 @@ def health():
         "lexicon_entries": len(current_lexicon()),
         "lessons": len(lessons()),
         "ai": ai_status(),
+        "vision": vision_status(),
     }
 
 
@@ -148,6 +170,10 @@ def capabilities(request: Request):
     return {
         "version": APP_VERSION,
         "ai": ai_status(),
+        "vision": vision_status(),
+        "streaming": streaming_capabilities(),
+        "epigraphy": epigraphy_capabilities(),
+        "active_learning": collection_policy(),
         "knowledge_loop": knowledge_loop_status(),
         "user": user,
         "features": {
@@ -156,10 +182,19 @@ def capabilities(request: Request):
             "dictionary": True,
             "lessons": True,
             "contextual_translation": True,
+            "morphology_analysis": True,
+            "sign_function_analysis": True,
+            "unicode_hieroglyph_format_controls": True,
+            "unicode_hieroglyph_extended_a_detection": True,
             "camera_pipeline": True,
+            "local_onnx_vision_adapter": True,
+            "vision_websocket": True,
+            "conversation_websocket": True,
             "browser_speech": True,
+            "pronunciation_profiles": True,
             "pwa": True,
             "human_reviewed_learning_loop": True,
+            "opt_in_active_learning": True,
         },
     }
 
@@ -167,6 +202,7 @@ def capabilities(request: Request):
 # ---------------- Authentication & roles ----------------
 @app.post("/api/auth/register")
 def register(req: RegisterRequest, request: Request, response: Response):
+    from .security import check_rate_limit
     check_rate_limit(request, "auth-register", 10, 3600)
     try:
         user = create_user(req.username, req.password, req.display_name or req.username, role="learner")
@@ -179,6 +215,7 @@ def register(req: RegisterRequest, request: Request, response: Response):
 
 @app.post("/api/auth/login")
 def login(req: LoginRequest, request: Request, response: Response):
+    from .security import check_rate_limit
     check_rate_limit(request, "auth-login", 20, 900)
     user = authenticate(req.username, req.password)
     if not user:
@@ -214,7 +251,7 @@ def admin_set_role(user_id: int, req: RoleUpdateRequest, _user: dict = Depends(r
         raise HTTPException(404, str(exc)) from exc
 
 
-# ---------------- Reversible ESHB / script lab ----------------
+# ---------------- Reversible ESHB / script laboratory ----------------
 @app.get("/api/eshb/codebook")
 def eshb_codebook():
     return codebook_rows()
@@ -227,7 +264,7 @@ def eshb_encode(req: ESHBEncodeRequest):
 
 @app.post("/api/eshb/decode")
 def eshb_decode(req: TextRequest):
-    return {"source":req.text,"decoded":decode(req.text),"warning":"Strict ESHB separators are required for guaranteed reversibility."}
+    return {"source": req.text, "decoded": decode(req.text), "warning": "Strict ESHB separators are required for guaranteed reversibility."}
 
 
 @app.post("/api/eshb/ipa/encode")
@@ -237,12 +274,27 @@ def ipa_encode(req: TextRequest):
 
 @app.post("/api/eshb/ipa/decode")
 def ipa_decode(req: TextRequest):
-    return {"source":req.text,"ipa":decode_ipa(req.text)}
+    return {"source": req.text, "ipa": decode_ipa(req.text)}
 
 
 @app.get("/api/egyptian/uniliterals")
 def egyptian_uniliterals():
     return uniliteral_table()
+
+
+@app.get("/api/egyptian/epigraphy-capabilities")
+def egyptian_epigraphy_capabilities():
+    return epigraphy_capabilities()
+
+
+@app.post("/api/egyptian/analyze-signs")
+def egyptian_analyze_signs(req: TextRequest):
+    return analyze_hieroglyphic_text(req.text)
+
+
+@app.post("/api/egyptian/analyze-transliteration")
+def egyptian_analyze_transliteration(req: TextRequest):
+    return analyze_transliteration(req.text)
 
 
 @app.post("/api/egyptian/hieroglyphize")
@@ -257,12 +309,12 @@ def egyptian_parse(req: TextRequest):
 
 @app.post("/api/egyptian/mdc-to-transliteration")
 def mdc_to_trans(req: TextRequest):
-    return {"source":req.text,"transliteration":mdc_to_transliteration(req.text)}
+    return {"source": req.text, "transliteration": mdc_to_transliteration(req.text)}
 
 
 @app.post("/api/egyptian/transliteration-to-mdc")
 def trans_to_mdc(req: TextRequest):
-    return {"source":req.text,"mdc":transliteration_to_mdc(req.text)}
+    return {"source": req.text, "mdc": transliteration_to_mdc(req.text)}
 
 
 @app.post("/api/speech/classroom-reading")
@@ -270,22 +322,28 @@ def speech_reading(req: TextRequest):
     return classroom_reading(req.text)
 
 
+@app.post("/api/speech/pronunciation")
+def speech_pronunciation(req: PronunciationRequest):
+    try:
+        return pronunciation_analysis(req.text, req.profile)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 # ---------------- Dictionary & translation ----------------
 @app.get("/api/dictionary")
-def dictionary(q: str="", language: str="all", pos: str|None=None, limit: int=50):
-    return {"query":q,"results":search_dictionary(q, language, pos, limit)}
+def dictionary(q: str = "", language: str = "all", pos: str | None = None, limit: int = 50):
+    return {"query": q, "results": search_dictionary(q, language, pos, limit)}
 
 
 @app.post("/api/translate")
 def translate(req: TranslationRequest):
-    # Backwards-compatible deterministic endpoint.
     if req.source == "egyptian":
         if req.target == "egyptian":
             return hieroglyphize_phrase(req.text)
         return egyptian_to_modern(req.text, req.target)
     if req.target != "egyptian":
-        first = translate_word(req.text, req.source, req.target)
-        return first
+        return translate_word(req.text, req.source, req.target)
     exact = translate_word(req.text, req.source, "egyptian")
     if exact.get("ok"):
         return exact
@@ -294,6 +352,7 @@ def translate(req: TranslationRequest):
 
 @app.post("/api/translate/contextual")
 async def translate_contextual(req: ContextualTranslationRequest, request: Request):
+    from .security import check_rate_limit
     check_rate_limit(request, "translate", 120, 60)
     result = await contextual_translate(
         req.text,
@@ -306,16 +365,21 @@ async def translate_contextual(req: ContextualTranslationRequest, request: Reque
     )
     user = get_current_user(request)
     if req.save_history and user:
-        saved = save_history(user["id"], req.source, req.target, req.text, result, mode="text")
-        result["history"] = saved
+        result["history"] = save_history(user["id"], req.source, req.target, req.text, result, mode="text")
     elif req.save_history and not user:
         result["history_warning"] = "Sign in to save translation history."
     return result
 
 
 # ---------------- Live camera / multimodal analysis ----------------
+@app.get("/api/vision/status")
+def public_vision_status():
+    return vision_status()
+
+
 @app.post("/api/vision/analyze")
 async def vision_analyze(req: VisionRequest, request: Request):
+    from .security import check_rate_limit
     check_rate_limit(request, "vision", 30, 60)
     try:
         return await analyze_frame(req.image_data_url, req.target_language, req.context, req.detail)
@@ -323,6 +387,59 @@ async def vision_analyze(req: VisionRequest, request: Request):
         raise HTTPException(400, str(exc)) from exc
     except Exception as exc:
         raise HTTPException(502, f"Vision provider failed: {exc}") from exc
+
+
+@app.websocket("/ws/vision")
+async def ws_vision(websocket: WebSocket):
+    await vision_socket(websocket)
+
+
+@app.websocket("/ws/conversation")
+async def ws_conversation(websocket: WebSocket):
+    await conversation_socket(websocket)
+
+
+# ---------------- Active-learning correction governance ----------------
+@app.get("/api/research/collection-policy")
+def research_collection_policy():
+    return collection_policy()
+
+
+@app.post("/api/vision/corrections")
+def vision_correction_create(req: VisionCorrectionRequest, user: dict = Depends(require_permission("vision_correction:create"))):
+    try:
+        return submit_vision_correction(
+            user_id=user["id"],
+            machine_analysis=req.machine_analysis,
+            expert_correction=req.expert_correction,
+            context=req.context,
+            model_version=req.model_version,
+            image_data_url=req.image_data_url,
+            consent_store_image=req.consent_store_image,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/vision/corrections")
+def vision_correction_list(status: str | None = None, limit: int = 100, _user: dict = Depends(require_permission("dataset:inspect"))):
+    try:
+        return {"items": list_vision_corrections(status=status, limit=limit), "policy": collection_policy()}
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/vision/corrections/{correction_id}/review")
+def vision_correction_review(correction_id: str, req: CorrectionReviewRequest, user: dict = Depends(require_permission("vision_correction:review"))):
+    try:
+        return review_vision_correction(correction_id, req.status, user["id"], req.note)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/research/dataset-manifest")
+def research_dataset_manifest(limit: int = 5000, _user: dict = Depends(require_permission("dataset:export"))):
+    return approved_dataset_manifest(limit=limit)
 
 
 # ---------------- Learning ----------------
@@ -333,22 +450,22 @@ def all_lessons():
 
 @app.get("/api/lessons/{lesson_id}")
 def lesson(lesson_id: int):
-    item=get_lesson(lesson_id)
+    item = get_lesson(lesson_id)
     if not item:
-        raise HTTPException(404,"Lesson not found")
+        raise HTTPException(404, "Lesson not found")
     return item
 
 
 @app.get("/api/quiz/vocabulary")
-def quiz(language: str="english", count: int=10):
-    if language not in ("english","swahili"):
-        raise HTTPException(400,"language must be english or swahili")
-    return random_vocab_quiz(language, max(1,min(count,50)))
+def quiz(language: str = "english", count: int = 10):
+    if language not in ("english", "swahili"):
+        raise HTTPException(400, "language must be english or swahili")
+    return random_vocab_quiz(language, max(1, min(count, 50)))
 
 
 @app.post("/api/progress")
 def update_progress(req: ProgressRequest, user: dict = Depends(require_permission("progress:write"))):
-    return save_progress(user["username"],req.item_type,req.item_id,req.score)
+    return save_progress(user["username"], req.item_type, req.item_id, req.score)
 
 
 @app.get("/api/progress/me")
@@ -363,7 +480,7 @@ def progress(learner: str, _user: dict = Depends(require_permission("users:manag
 
 # ---------------- History ----------------
 @app.get("/api/history")
-def history(limit: int=50, user: dict = Depends(require_user)):
+def history(limit: int = 50, user: dict = Depends(require_user)):
     return {"items": list_history(user["id"], limit)}
 
 
@@ -377,22 +494,15 @@ def history_clear(user: dict = Depends(require_user)):
 def feedback_create(req: FeedbackRequest, user: dict = Depends(require_permission("feedback:create"))):
     try:
         return create_feedback(
-            user_id=user["id"],
-            kind=req.kind,
-            source_text=req.source_text,
-            source_language=req.source_language,
-            target_language=req.target_language,
-            rating=req.rating,
-            correction=req.correction,
-            context=req.context,
-            note=req.note,
+            user_id=user["id"], kind=req.kind, source_text=req.source_text, source_language=req.source_language,
+            target_language=req.target_language, rating=req.rating, correction=req.correction, context=req.context, note=req.note,
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
 
 @app.get("/api/feedback")
-def feedback_list(kind: str|None=None, limit: int=100, _user: dict = Depends(require_permission("knowledge:inspect"))):
+def feedback_list(kind: str | None = None, limit: int = 100, _user: dict = Depends(require_permission("knowledge:inspect"))):
     return {"items": list_feedback(limit=limit, kind=kind)}
 
 
@@ -401,20 +511,15 @@ def feedback_list(kind: str|None=None, limit: int=100, _user: dict = Depends(req
 def knowledge_create(req: KnowledgeProposalRequest, user: dict = Depends(require_permission("proposal:create"))):
     try:
         return create_proposal(
-            kind=req.kind,
-            payload=req.payload,
-            evidence=req.evidence,
-            source_url=req.source_url,
-            proposer_user_id=user["id"],
-            origin="human",
-            confidence=req.confidence,
+            kind=req.kind, payload=req.payload, evidence=req.evidence, source_url=req.source_url,
+            proposer_user_id=user["id"], origin="human", confidence=req.confidence,
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
 
 @app.get("/api/knowledge/proposals")
-def knowledge_list(status: str|None=None, kind: str|None=None, limit: int=100, _user: dict = Depends(require_permission("knowledge:inspect"))):
+def knowledge_list(status: str | None = None, kind: str | None = None, limit: int = 100, _user: dict = Depends(require_permission("knowledge:inspect"))):
     try:
         return {"items": list_proposals(status=status, kind=kind, limit=limit)}
     except ValueError as exc:
@@ -438,7 +543,7 @@ def knowledge_review(proposal_id: str, req: KnowledgeReviewRequest, user: dict =
 
 
 @app.get("/api/knowledge/unresolved")
-def unresolved(limit: int=50, _user: dict = Depends(require_permission("knowledge:inspect"))):
+def unresolved(limit: int = 50, _user: dict = Depends(require_permission("knowledge:inspect"))):
     return {"items": top_unresolved(limit=limit), "loop": knowledge_loop_status()}
 
 

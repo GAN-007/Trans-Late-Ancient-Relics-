@@ -13,6 +13,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
@@ -29,12 +30,18 @@ jobs:
         env:
           ESHB_RUNTIME_DIR: ${{ runner.temp }}/eshb-runtime
           ESHB_AI_PROVIDER: disabled
+          ESHB_VISION_BACKEND: auto
+          ESHB_ACTIVE_LEARNING_STORE_IMAGES: "false"
         run: python -m pytest -q
-      - name: Import API
+      - name: Import API and verify version
         env:
           ESHB_RUNTIME_DIR: ${{ runner.temp }}/eshb-runtime
           ESHB_AI_PROVIDER: disabled
-        run: python -c "from app.main import app; assert app.version == '2.0.0'"
+        run: python -c "from app.main import app; assert app.version == '3.0.0'"
+      - name: Smoke-test epigraphy modules without optional vision dependencies
+        env:
+          ESHB_RUNTIME_DIR: ${{ runner.temp }}/eshb-runtime
+        run: python -c "from app.epigraphy import analyze_hieroglyphic_text; from app.morphology import analyze_transliteration; assert analyze_hieroglyphic_text('𓄤')['sign_count']==1; assert analyze_transliteration('sḏm.n.f')['words'][0]['form_candidates']"
       - name: Check browser JavaScript syntax
         run: |
           for file in app/static/js/*.js app/static/service-worker.js; do
@@ -52,4 +59,4 @@ jobs:
         with:
           context: .
           push: false
-          tags: trans-late-ancient-relics:ci
+          tags: trans-late-ancient-relics:v3-ci

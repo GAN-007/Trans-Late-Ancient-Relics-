@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import base64
-import os
 
 import pytest
 from fastapi.testclient import TestClient
@@ -20,6 +19,9 @@ def isolated_runtime(tmp_path, monkeypatch):
     monkeypatch.setenv("ESHB_RUNTIME_DIR", str(tmp_path))
     monkeypatch.setenv("ESHB_DB_PATH", str(tmp_path / "test.sqlite3"))
     monkeypatch.setenv("ESHB_AI_PROVIDER", "disabled")
+    monkeypatch.setenv("ESHB_VISION_BACKEND", "auto")
+    monkeypatch.setenv("ESHB_VISION_MODEL_PATH", str(tmp_path / "missing.onnx"))
+    monkeypatch.setenv("ESHB_VISION_CLASSES_PATH", str(tmp_path / "missing-classes.json"))
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("ESHB_BOOTSTRAP_ADMIN_USERNAME", raising=False)
     monkeypatch.delenv("ESHB_BOOTSTRAP_ADMIN_PASSWORD", raising=False)
@@ -34,7 +36,6 @@ def test_classroom_reading_marks_uncertainty():
 
 
 def test_png_validation_and_no_ai_status():
-    # Minimal valid PNG signature plus bytes is sufficient for transport validation.
     data = base64.b64encode(b"\x89PNG\r\n\x1a\nunit-test").decode()
     meta = validate_image_data_url(f"data:image/png;base64,{data}")
     assert meta["mime"] == "image/png"
@@ -86,12 +87,7 @@ def test_api_registration_permissions_and_progress():
 
         denied = client.post(
             "/api/knowledge/proposals",
-            json={
-                "kind": "grammar",
-                "payload": {"note": "x"},
-                "evidence": "",
-                "source_url": "",
-            },
+            json={"kind": "grammar", "payload": {"note": "x"}, "evidence": "", "source_url": ""},
         )
         assert denied.status_code == 403
 
@@ -121,7 +117,8 @@ def test_live_vision_pipeline_is_available_but_guarded_without_provider():
         body = response.json()
         assert body["ok"] is False
         assert body["image"]["mime"] == "image/jpeg"
-        assert "requires a configured" in body["message"]
+        assert "vision" in body["message"].lower()
+        assert body["vision"]["resolved_backend"] == "unavailable"
 
 
 def test_security_headers_and_pwa_routes():
@@ -129,17 +126,13 @@ def test_security_headers_and_pwa_routes():
         response = client.get("/")
         assert response.status_code == 200
         assert response.headers["X-Frame-Options"] == "DENY"
+        assert response.headers["Cross-Origin-Resource-Policy"] == "same-origin"
         assert "camera=(self)" in response.headers["Permissions-Policy"]
-        manifest = client.get("/manifest.webmanifest")
-        assert manifest.status_code == 200
-        worker = client.get("/service-worker.js")
-        assert worker.status_code == 200
+        assert client.get("/manifest.webmanifest").status_code == 200
+        assert client.get("/service-worker.js").status_code == 200
 
 
 def test_learner_feedback_and_reviewer_visibility():
-    from app.auth import create_session, set_session_cookie
-    from app.feedback import init_feedback_db, list_feedback
-
     with TestClient(app) as client:
         client.post(
             "/api/auth/register",
@@ -148,14 +141,9 @@ def test_learner_feedback_and_reviewer_visibility():
         saved = client.post(
             "/api/feedback",
             json={
-                "kind": "translation",
-                "source_text": "good",
-                "source_language": "english",
-                "target_language": "egyptian",
-                "rating": -1,
-                "correction": "Review context-sensitive gloss.",
-                "context": "lesson",
-                "note": "unit test",
+                "kind": "translation", "source_text": "good", "source_language": "english",
+                "target_language": "egyptian", "rating": -1, "correction": "Review context-sensitive gloss.",
+                "context": "lesson", "note": "unit test",
             },
         )
         assert saved.status_code == 200
@@ -171,12 +159,8 @@ def test_ai_lexicon_draft_needs_reviewer_source_url():
     proposal = create_proposal(
         "lexicon",
         {
-            "transliteration": "xyz",
-            "english": ["draft"],
-            "swahili": ["rasimu"],
-            "pos": "noun",
-            "notes": "AI draft.",
-            "confidence": "low",
+            "transliteration": "xyz", "english": ["draft"], "swahili": ["rasimu"],
+            "pos": "noun", "notes": "AI draft.", "confidence": "low",
         },
         evidence="AI rationale is not itself a scholarly attestation.",
         origin="ai",

@@ -1,4 +1,4 @@
-const CACHE = 'ancient-relics-v2-shell';
+const CACHE = 'ancient-relics-v3-shell';
 const SHELL = [
   '/',
   '/manifest.webmanifest',
@@ -31,8 +31,8 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(request).catch(() => caches.match(request)));
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/ws/')) {
+    event.respondWith(fetch(request));
     return;
   }
   event.respondWith(
