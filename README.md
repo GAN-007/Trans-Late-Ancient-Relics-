@@ -15,7 +15,7 @@ ESHB is intentionally modern. Its **strict form** places a separator between log
 
 - English → strict/display ESHB
 - Swahili → strict/display ESHB, including CH, SH, DH, TH, KH, GH, NY, NG and NG'
-- Strict ESHB → original orthographic spelling
+- Strict ESHB → normalized orthographic spelling
 - IPA → ESHB and ESHB → IPA for common English/Swahili IPA symbols, with reversible Unicode fallback
 - Middle Egyptian uniliteral sign table
 - Manuel de Codage ↔ Unicode Egyptological transliteration conversion for the core special consonants
@@ -180,3 +180,8 @@ docker compose up --build
 ```
 
 Then open `http://127.0.0.1:8000`.
+
+
+## Runtime persistence
+
+Learner progress is stored in `data-runtime/tutor_progress.sqlite3` by default. Override the runtime directory with `ESHB_RUNTIME_DIR` or the exact database path with `ESHB_DB_PATH`. Docker Compose mounts this directory as a persistent named volume.

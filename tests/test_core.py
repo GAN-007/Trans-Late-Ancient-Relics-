@@ -13,9 +13,9 @@ def test_english_roundtrip():
     assert decode(encoded.strict)==text
 
 def test_ipa_roundtrip_basic():
-    ipa="hɑbari"
-    encoded=encode_ipa(ipa)
-    assert decode_ipa(encoded.strict)==ipa
+    for ipa in ["hɑbari", "ɾa", "tʃai", "dʒa", "ŋa"]:
+        encoded=encode_ipa(ipa)
+        assert decode_ipa(encoded.strict)==ipa
 
 def test_mdc():
     assert mdc_to_transliteration("sDm")=="sḏm"
@@ -33,3 +33,10 @@ def test_dictionary_translation():
     x=translate_word("good","english","egyptian")
     assert x["ok"]
     assert x["transliteration"]=="nfr"
+
+
+def test_learning_data_loaded():
+    from app.egyptian import LEXICON
+    from app.pedagogy import lessons
+    assert len(LEXICON) >= 140
+    assert len(lessons()) == 26

@@ -1,11 +1,14 @@
 from __future__ import annotations
-import json, random, sqlite3
+import json, os, random, sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from .egyptian import LEXICON
 
 DATA = Path(__file__).parent / "data"
-DB = Path(__file__).resolve().parent.parent / "tutor_progress.sqlite3"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+RUNTIME_DIR = Path(os.environ.get("ESHB_RUNTIME_DIR", PROJECT_ROOT / "data-runtime"))
+RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+DB = Path(os.environ.get("ESHB_DB_PATH", RUNTIME_DIR / "tutor_progress.sqlite3"))
 
 def lessons():
     items = []

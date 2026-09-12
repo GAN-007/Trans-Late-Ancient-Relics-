@@ -26,7 +26,7 @@ ESCAPE_PREFIX = "§"
 # a reversible Unicode escape token.
 IPA_TO_LABEL = {
     "p":"P","b":"B","t":"T","d":"D","k":"K","g":"G","f":"F","v":"V","s":"S","z":"Z",
-    "ʃ":"SH","ʒ":"ZH","h":"H","m":"M","n":"N","ŋ":"NG'","ɲ":"NY","l":"L","r":"R","ɾ":"R",
+    "ʃ":"SH","ʒ":"ZH","h":"H","m":"M","n":"N","ŋ":"NG'","ɲ":"NY","l":"L","r":"R","ɾ":"R_TAP",
     "j":"Y","w":"W","tʃ":"CH","dʒ":"J","θ":"TH","ð":"DH","x":"KH","ɣ":"GH",
     "i":"I","ɪ":"I_SHORT","e":"E","ɛ":"E_OPEN","æ":"AE","a":"A","ɑ":"A_BACK","ɒ":"O_SHORT",
     "ɔ":"O_OPEN","o":"O","ʊ":"U_SHORT","u":"U","ə":"SCHWA","ɜ":"ER","ʌ":"UH",
@@ -35,6 +35,7 @@ IPA_TO_LABEL = {
 # Unique hieroglyph sequences for IPA-only labels that are not ordinary ESHB letters.
 IPA_SPECIAL = {
     "ZH":"𓈙𓆓",
+    "R_TAP":"𓂋𓏏",
     "I_SHORT":"𓇋𓏏",
     "E_OPEN":"𓇋𓇋𓂝",
     "AE":"𓄿𓇋𓇋",

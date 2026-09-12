@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 *.pyc
 tutor_progress.sqlite3
+data-runtime/
