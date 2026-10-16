@@ -81,6 +81,12 @@ from .security import enforce_unsafe_origin, security_headers
 from .speech import classroom_reading, pronunciation_analysis
 from .streaming import conversation_socket, streaming_capabilities, vision_socket
 from .translator import egyptian_to_modern, translate_phrase, translate_word
+from .universal_translation import (
+    TranslationError,
+    UniversalTranslationRequest,
+    universal_capabilities,
+    universal_translate,
+)
 from .vision import analyze_frame, vision_status
 
 BASE = Path(__file__).parent
@@ -161,6 +167,7 @@ def health():
         "lessons": len(lessons()),
         "ai": ai_status(),
         "vision": vision_status(),
+        "universal_translation": universal_capabilities(),
     }
 
 
@@ -172,6 +179,7 @@ def capabilities(request: Request):
         "ai": ai_status(),
         "vision": vision_status(),
         "streaming": streaming_capabilities(),
+        "universal_translation": universal_capabilities(),
         "epigraphy": epigraphy_capabilities(),
         "active_learning": collection_policy(),
         "knowledge_loop": knowledge_loop_status(),
@@ -369,6 +377,22 @@ async def translate_contextual(req: ContextualTranslationRequest, request: Reque
     elif req.save_history and not user:
         result["history_warning"] = "Sign in to save translation history."
     return result
+
+
+# ---------------- Modern-language neural translation ----------------
+@app.get("/api/universal/capabilities")
+def modern_language_capabilities():
+    return universal_capabilities()
+
+
+@app.post("/api/universal/translate")
+async def modern_language_translate(req: UniversalTranslationRequest, request: Request):
+    from .security import check_rate_limit
+    check_rate_limit(request, "universal-translate", 30, 60)
+    try:
+        return await universal_translate(req)
+    except TranslationError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
 
 
 # ---------------- Live camera / multimodal analysis ----------------
