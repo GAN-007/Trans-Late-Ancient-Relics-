@@ -1,5 +1,6 @@
 import {initTabs,loadCapabilities,refreshUser,toast} from './core.js';
 import {initTranslate,syncTranslateAuth} from './translate.js';
+import {initUniversal} from './universal.js';
 import {initLens} from './lens.js';
 import {initTalk} from './talk.js';
 import {initLearn} from './learn.js';
@@ -18,7 +19,7 @@ function markV3(){
 
 async function boot(){
   try{
-    markV3();initTabs();initTranslate();initLens();initTalk();initAccount();onUserChanged(syncTranslateAuth);
+    markV3();initTabs();initTranslate();initUniversal();initLens();initTalk();initAccount();onUserChanged(syncTranslateAuth);
     await Promise.all([loadCapabilities(),refreshUser(),initLearn()]);
   }catch(error){toast(`Startup warning: ${error.message}`);}
   if('serviceWorker' in navigator){try{await navigator.serviceWorker.register('/service-worker.js');}catch{}}
