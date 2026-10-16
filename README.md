@@ -248,6 +248,18 @@ The application never triggers model training or swaps production weights automa
 
 See [`docs/V3_RESEARCH_MODEL_GOVERNANCE.md`](docs/V3_RESEARCH_MODEL_GOVERNANCE.md).
 
+## Modern multilingual translation integration
+
+The existing evidence-aware Ancient Egyptian/ESHB core is preserved. An independent modern-language translation service now supports Tencent Hy-MT2 via an operator-managed OpenAI-compatible model server and optional Google Cloud Translation Basic v2.
+
+Configure the model host with UNIVERSAL_MT_BASE_URL=http://127.0.0.1:8001/v1 and UNIVERSAL_MT_MODEL=tencent/Hy-MT2-1.8B. An authenticated model host may use UNIVERSAL_MT_API_KEY. Optional Google Cloud Translation integration uses GOOGLE_CLOUD_TRANSLATE_API_KEY and requires API enablement and billing.
+
+Endpoints: GET /api/universal/capabilities and POST /api/universal/translate. Formats: text, selective JSON fields and SRT subtitles. The translator preserves templating variables, markup and glossary terms or reports explicit validation failures. Unsupported languages are never silently assigned to Hy-MT2. No configured provider means no fabricated result.
+
+Governed human-approved training dataset export: python scripts/build_mt_dataset.py approved.csv output/. This writes JSONL for offline Hy-MT2 supervised fine-tuning and does not retrain or promote models automatically.
+
+Full Tencent, Google Translate and destination audit: [docs/UNIVERSAL_TRANSLATOR_AUDIT_2026.md](docs/UNIVERSAL_TRANSLATOR_AUDIT_2026.md). Sign-language video, unknown signals, and generic ancient writing translation remain research gaps, not advertised finished features.
+
 ## Run locally
 
 ```bash
