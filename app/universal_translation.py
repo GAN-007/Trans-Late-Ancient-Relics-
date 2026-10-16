@@ -11,6 +11,7 @@ import html
 import json
 import os
 import re
+from urllib.parse import urlsplit
 from typing import Any, Literal
 
 import httpx
@@ -178,6 +179,12 @@ def _mask(text: str) -> tuple[str, dict[str, str]]:
 
 
 def _unmask(translated: str, originals: dict[str, str]) -> str:
+    positions = [translated.find(marker) for marker in originals]
+    if any(position < 0 for position in positions) or positions != sorted(positions):
+        raise TranslationError(
+            "Translation failed integrity validation: protected items changed order or vanished.",
+            502,
+        )
     for marker, original in originals.items():
         if translated.count(marker) != 1:
             raise TranslationError(
@@ -209,9 +216,15 @@ def _prompt(text: str, src: str, tgt: str, req: UniversalTranslationRequest) -> 
 async def _call_hy(text: str, src: str, tgt: str, req: UniversalTranslationRequest) -> str:
     base = os.environ["UNIVERSAL_MT_BASE_URL"].strip().rstrip("/")
     # Never take this endpoint from the HTTP request; only the server operator configures it.
-    if not (base.startswith("https://") or base.startswith("http://127.0.0.1")
-            or base.startswith("http://localhost") or base.startswith("http://[::1]")):
-        raise TranslationError("Hy-MT2 endpoint must use HTTPS or a local loopback URL.", 503)
+    parsed = urlsplit(base)
+    if (parsed.scheme not in {"https", "http"}
+            or not parsed.hostname
+            or (parsed.scheme == "http" and parsed.hostname not in {"localhost", "127.0.0.1", "::1"})
+            or parsed.username or parsed.password or parsed.fragment or parsed.query):
+        raise TranslationError(
+            "Hy-MT2 endpoint must use HTTPS or a local loopback URL without credentials or URL query.",
+            503,
+        )
     if not base.endswith("/v1"):
         base += "/v1"
     model = os.getenv("UNIVERSAL_MT_MODEL", "tencent/Hy-MT2-1.8B")
@@ -248,9 +261,11 @@ async def _call_hy(text: str, src: str, tgt: str, req: UniversalTranslationReque
 
 
 async def _call_google(text: str, src: str, tgt: str, req: UniversalTranslationRequest) -> str:
-    data: dict[str, str] = {"q": text, "target": tgt, "format": "text"}
-    if src != "auto":
-        data["source"] = src
+    cloud_target = "zh-TW" if tgt == "zh-Hant" else tgt
+    cloud_source = "zh-TW" if src == "zh-Hant" else src
+    data: dict[str, str] = {"q": text, "target": cloud_target, "format": "text"}
+    if cloud_source != "auto":
+        data["source"] = cloud_source
     try:
         async with httpx.AsyncClient(timeout=45.0, follow_redirects=False) as client:
             response = await client.post(
