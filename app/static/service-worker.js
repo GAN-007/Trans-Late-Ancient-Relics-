@@ -1,4 +1,4 @@
-const CACHE = 'ancient-relics-v3-shell';
+const CACHE = 'ancient-relics-v3-mt-20261016';
 const SHELL = [
   '/',
   '/manifest.webmanifest',
@@ -10,6 +10,7 @@ const SHELL = [
   '/static/js/speech.js',
   '/static/js/core.js',
   '/static/js/translate.js',
+  '/static/js/universal.js',
   '/static/js/lens.js',
   '/static/js/talk.js',
   '/static/js/learn.js',

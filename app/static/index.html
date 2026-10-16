@@ -110,6 +110,61 @@
         </div>
       </article>
     </div>
+    <div class="grid two" style="margin-top:24px">
+      <article class="card">
+        <div class="section-kicker">MULTILINGUAL NEURAL TRANSLATION</div>
+        <h2 id="universalTitle">Translate modern languages</h2>
+        <p class="muted">Hy-MT2 for its documented language set, or optional Google Cloud Translation for broader coverage. This tool is separate from evidence-aware Ancient Egyptian interpretation.</p>
+        <div class="row">
+          <label for="universalSource">Source language or code
+            <input id="universalSource" value="en" maxlength="40" autocomplete="off" placeholder="en, sw, fr, auto">
+          </label>
+          <label for="universalTarget">Target language or code
+            <input id="universalTarget" value="fr" maxlength="40" autocomplete="off" placeholder="fr, sw, ja, ar">
+          </label>
+        </div>
+        <div class="row">
+          <label for="universalProvider">Engine
+            <select id="universalProvider">
+              <option value="auto">Automatic routing</option>
+              <option value="hy-mt2">Tencent Hy-MT2</option>
+              <option value="google-cloud">Google Cloud Translation</option>
+            </select>
+          </label>
+          <label for="universalFormat">Document type
+            <select id="universalFormat">
+              <option value="text">Plain text</option>
+              <option value="json">JSON visible text</option>
+              <option value="srt">SRT subtitles</option>
+            </select>
+          </label>
+        </div>
+        <label for="universalInput">Source content</label>
+        <textarea id="universalInput" rows="5" maxlength="20000">Welcome to the museum. Please protect our shared heritage.</textarea>
+        <label for="universalContext">Context <span class="optional">optional</span></label>
+        <textarea id="universalContext" rows="2" maxlength="1500" placeholder="Museum information sign; formal visitor-facing wording"></textarea>
+        <details>
+          <summary>Terminology glossary (optional)</summary>
+          <p class="microcopy">JSON object mapping source words to exact required target words; maximum 30 entries. For example: {"heritage":"patrimoine"}.</p>
+          <textarea id="universalGlossary" rows="3" placeholder='{"heritage":"patrimoine"}'></textarea>
+        </details>
+        <div class="button-row">
+          <button id="universalTranslateBtn">Translate modern text</button>
+          <button id="universalCopyBtn" class="secondary" disabled>Copy result</button>
+          <button id="universalMicBtn" class="secondary">Dictate</button>
+          <button id="universalSpeakBtn" class="secondary" disabled>Read aloud</button>
+          <button id="universalDownloadBtn" class="secondary" disabled>Download</button>
+        </div>
+        <p class="microcopy" id="universalProviderStatus">Checking available translation providers…</p>
+      </article>
+      <article class="card result-card" aria-live="polite" id="universalResultCard">
+        <div class="section-kicker">TRANSLATION OUTPUT</div>
+        <h2>Meaning across languages</h2>
+        <p class="microcopy" id="universalMeta">Provider, model and verified segment count appear after a request.</p>
+        <pre id="universalOutput" aria-label="Modern language translation output">Your translation will appear here.</pre>
+        <p class="microcopy">Neural translations may be incorrect. Ancient inscriptions, sign language, unrecognized sound and radio signals require different evidence and specialist models.</p>
+      </article>
+    </div>
   </section>
 
   <section id="lens" class="tab" aria-labelledby="lensTitle">
