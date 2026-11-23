@@ -20,7 +20,7 @@ from .active_learning import (
 from .ai import ai_status
 from .avatar_chat.personas import PERSONAS as AVATAR_PERSONAS
 from .avatar_chat.session import avatar_socket, avatar_status
-from .ancient.engine import LadderError, concept_table, coverage as ladder_coverage, languages as ladder_languages, translate as ladder_translate
+from .ancient.engine import LadderError, concept_table, coverage as ladder_coverage, languages as ladder_languages
 from .auth import (
     authenticate,
     clear_session_cookie,
@@ -413,15 +413,27 @@ async def modern_language_translate(req: UniversalTranslationRequest, request: R
 # ---------------- Ancient Language Ladder (any-to-any) ----------------
 @app.get("/api/ancient/languages")
 def ancient_languages():
-    return {"languages": ladder_languages(), "coverage": ladder_coverage()}
+    from .ancient.bridge import _mt_available, modern_languages
+    return {"languages": ladder_languages(), "coverage": ladder_coverage(),
+            "modern_languages": modern_languages(), "machine_translation_available": _mt_available()}
 
 
 @app.post("/api/ancient/translate")
-def ancient_translate(req: AncientTranslationRequest, request: Request):
+async def ancient_translate(req: AncientTranslationRequest, request: Request):
+    from .ancient.bridge import translate_any
     from .security import check_rate_limit
     check_rate_limit(request, "ancient-translate", 120, 60)
     try:
-        return ladder_translate(req.text, req.source, req.targets or "all")
+        return await translate_any(req.text, req.source, req.targets or "all")
+    except LadderError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/api/ancient/quiz")
+def ancient_quiz(language: str, explain: str = "english", mode: str = "mixed", count: int = 10):
+    from .ancient.quiz import make_quiz
+    try:
+        return make_quiz(language, explain, mode, count)
     except LadderError as exc:
         raise HTTPException(422, str(exc)) from exc
 

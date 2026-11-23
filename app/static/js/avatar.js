@@ -12,7 +12,7 @@ const SUGGESTIONS = {
   swahili: ['Nisomee: 𓋹𓈖𓐍 𓄤𓆑𓂋', 'Tafsiri “mfalme alipenda mama” kwa Kilatini', 'Maana ya lugal ni nini?', 'Nisomee: ተወከልኩ፡በአማን።'],
 };
 const STATE_LABELS = {offline: 'Offline', connecting: 'Connecting…', idle: 'Ready', listening: 'Listening…', thinking: 'Thinking…', speaking: 'Speaking'};
-const STATUS_LABELS = {attested: 'attested', composed: 'composed', reconstructed: 'reconstructed', reconstructed_composition: 'reconstructed', hypothetical: 'hypothetical', not_attested_for_this_structure: 'not attested', unavailable: 'no form'};
+const STATUS_LABELS = {attested: 'attested', composed: 'composed', reconstructed: 'reconstructed', reconstructed_composition: 'reconstructed', hypothetical: 'hypothetical', not_attested_for_this_structure: 'not attested', unavailable: 'no form', machine_translation: 'machine translation'};
 
 const chat = {
   ws: null, connected: false, persona: null, personas: [], heartbeat: null, retry: 0, reconnectTimer: null,
@@ -312,7 +312,8 @@ function addCard(card) {
   if (!card?.rows?.length) return;
   const host = document.createElement('div');
   host.className = 'avatar-card';
-  host.innerHTML = `<div class="microcopy">${card.type === 'concept' ? `Word: ${esc(card.concept)}` : `“${esc(card.source)}”`}</div>` + card.rows.map(row => {
+  host.innerHTML = `<div class="microcopy">${card.type === 'concept' ? `Word: ${esc(card.concept)}` : `“${esc(card.source)}”`}</div>`
+    + (card.warning ? `<div class="warning">${esc(card.warning)}</div>` : '') + card.rows.map(row => {
     const scripts = Object.entries(row.scripts || {}).filter(([, v]) => v).slice(0, 2).map(([k, v]) => `<span class="avatar-card-script" ${k.includes('arabic') || k === 'safaitic' ? 'dir="rtl"' : ''}>${esc(v)}</span>`).join('');
     return `<div class="avatar-card-row"><span class="avatar-card-lang">${esc(row.name)}</span><span class="avatar-card-text">${esc(row.text || '—')}</span>${scripts}<span class="pill">${esc(STATUS_LABELS[row.status] || row.status)}</span></div>`;
   }).join('');

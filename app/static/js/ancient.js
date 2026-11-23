@@ -1,12 +1,15 @@
 import {get, post} from './api.js';
-import {$, esc, setBusy, toast} from './core.js';
+import {$, esc, setBusy, state as appState, toast} from './core.js';
 import {speak} from './speech.js';
 
 const EXAMPLES = [
   ['english', 'The truth, I have put my trust in'],
   ['english', 'The king made a great house'],
+  ['english', 'I did not see the king'],
+  ['english', 'Is the sun great?'],
   ['swahili', 'Mimi ni mtumishi'],
   ['old_latin', 'ueritatei credidei'],
+  ['middle_egyptian', 'n mꜣ nswt jtrw'],
   ['archaic_sumerian', '𒈗𒂊 𒂍 𒃲 𒈬𒌦𒆕'],
   ['english', 'water'],
 ];
@@ -30,19 +33,26 @@ const STATUS_LABELS = {
   hypothetical: 'Hypothetical',
   not_attested_for_this_structure: 'Not attested this way',
   unavailable: 'No form',
+  machine_translation: 'Machine translation',
 };
 
-const state = {languages: [], last: null};
+const state = {languages: [], modern: [], mt: false, last: null, quiz: null};
 
 function languageName(id) {
-  return state.languages.find(lang => lang.id === id)?.name || id;
+  return state.languages.find(lang => lang.id === id)?.name || state.modern.find(lang => lang.id === id)?.name || id;
 }
 
 function fillSelects() {
-  const options = state.languages.map(lang => `<option value="${esc(lang.id)}">${esc(lang.name)}</option>`).join('');
-  $('#ladderSource').innerHTML = options;
-  $('#ladderTarget').innerHTML = '<option value="all">Every language</option>' + options;
+  const ladder = state.languages.map(lang => `<option value="${esc(lang.id)}">${esc(lang.name)}</option>`).join('');
+  const suffix = state.mt ? '' : ' (needs a translator)';
+  const modern = state.modern.map(lang => `<option value="${esc(lang.id)}" ${state.mt ? '' : 'disabled'}>${esc(lang.name + suffix)}</option>`).join('');
+  const groups = `<optgroup label="Ladder grammar">${ladder}</optgroup><optgroup label="Modern languages (machine translation via English)">${modern}</optgroup>`;
+  $('#ladderSource').innerHTML = groups;
+  $('#ladderTarget').innerHTML = '<option value="all">Every ancient language</option>' + groups;
   $('#ladderSource').value = 'english';
+  $('#ladderQuizLanguage').innerHTML = state.languages.filter(lang => lang.id !== 'english')
+    .map(lang => `<option value="${esc(lang.id)}">${esc(lang.name)}</option>`).join('');
+  $('#ladderQuizLanguage').value = 'archaic_sumerian';
 }
 
 function renderExamples() {
@@ -64,11 +74,15 @@ function describeMeaning(meaning) {
   if (!meaning) return '';
   const subject = meaning.subject;
   const who = subject?.noun ? `${subject.adj ? subject.adj + ' ' : ''}${subject.noun}` : PERSON_WORDS[subject?.person] || subject?.person;
+  const flags = `${meaning.negative ? ' · not' : ''}${meaning.question ? ' · question' : ''}`;
   if (meaning.kind === 'clause') {
     const object = meaning.object ? ` → ${meaning.object.adj ? meaning.object.adj + ' ' : ''}${meaning.object.noun}` : '';
-    return `${who} · ${meaning.verb} (${meaning.tense})${object}`;
+    return `${who} · ${meaning.verb} (${meaning.tense})${object}${flags}`;
   }
-  if (meaning.kind === 'identity') return `${who} = ${meaning.predicate.adj ? meaning.predicate.adj + ' ' : ''}${meaning.predicate.noun}`;
+  if (meaning.kind === 'identity') {
+    const predicate = [meaning.predicate.adj, meaning.predicate.noun].filter(Boolean).join(' ');
+    return `${who} = ${predicate}${flags}`;
+  }
   if (meaning.kind === 'np') return `${meaning.np.adj ? meaning.np.adj + ' ' : ''}${meaning.np.noun}`;
   return `${meaning.word_kind}: ${meaning.concept}`;
 }
@@ -79,10 +93,12 @@ function renderMeaning(data) {
   box.hidden = false;
   const parse = data.parse || {};
   const list = (title, items) => items?.length ? `<div class="warning"><strong>${esc(title)}</strong> ${esc(items.join(' '))}</div>` : '';
+  const bridge = data.bridge ? `<div class="microcopy">${esc(data.bridge.note)} English: “${esc(data.bridge.english)}”</div>` : '';
+  const warning = data.warning ? `<div class="warning"><strong>Partly translated.</strong> ${esc(data.warning)}</div>` : '';
   box.innerHTML = data.ok
-    ? `<div class="result-primary">${esc(describeMeaning(data.meaning))}</div>
+    ? `${data.meaning ? `<div class="result-primary">${esc(describeMeaning(data.meaning))}</div>` : ''}
        <div class="microcopy">Read from ${esc(languageName(data.source_language))}: “${esc(data.source)}”</div>
-       ${list('Not recognized:', parse.unknown_words)}
+       ${bridge}${warning}
        ${list('Ambiguous:', parse.ambiguities)}
        ${parse.notes?.length ? `<p class="microcopy">${esc(parse.notes.join(' '))}</p>` : ''}`
     : `<div class="warning">${esc(data.message || 'No meaning found.')}</div>${list('Not recognized:', parse.unknown_words)}`;
@@ -105,7 +121,7 @@ function renderResults(data) {
   }
   host.innerHTML = data.targets.map(id => {
     const result = data.results[id];
-    const lang = state.languages.find(item => item.id === id) || {};
+    const lang = state.languages.find(item => item.id === id) || (result.status === 'machine_translation' || result.via ? {period: 'Modern · machine translation via English', family: ''} : {});
     const scripts = Object.entries(result.scripts || {}).filter(([, value]) => value).map(([name, value]) => scriptBlock(name, value)).join('');
     const gaps = result.gaps?.length ? `<div class="microcopy">No form available for: ${esc(result.gaps.map(gap => gap.concept).join(', '))}</div>` : '';
     const refusal = result.refusal ? `<div class="warning">${esc(result.refusal)}</div>` : '';
@@ -160,12 +176,69 @@ function reuse(id) {
   $('#ladderInput').scrollIntoView({behavior: 'smooth', block: 'center'});
 }
 
+// ------------------------------------------------------------------ quiz
+function renderQuestion() {
+  const quiz = state.quiz;
+  const body = $('#ladderQuizBody');
+  if (!quiz) return;
+  if (quiz.index >= quiz.questions.length) {
+    body.innerHTML = `<div class="quiz-question"><p class="quiz-score">You scored ${quiz.score} of ${quiz.questions.length} in ${esc(quiz.language_name)}.</p>
+      <p class="microcopy">${esc(quiz.note || '')}</p><div class="button-row"><button type="button" id="ladderQuizAgain">Another round</button></div></div>`;
+    return;
+  }
+  const q = quiz.questions[quiz.index];
+  const ask = {meaning: 'What does this mean?', form: `How do you write this in ${quiz.language_name}?`, sentence: 'What does this sentence say?'}[q.kind];
+  const scripts = Object.entries(q.scripts || {}).filter(([, v]) => v).slice(0, 2).map(([name, value]) => scriptBlock(name, value)).join('');
+  body.innerHTML = `<div class="quiz-question">
+    <div class="microcopy">Question ${quiz.index + 1} of ${quiz.questions.length} · score ${quiz.score}</div>
+    <div class="microcopy">${esc(ask)}</div>
+    <div class="quiz-prompt" dir="auto">${esc(q.prompt_text)}</div>${scripts}
+    <div class="quiz-choices">${q.choices.map((c, i) => `<button type="button" data-choice="${i}" dir="auto">${esc(c)}</button>`).join('')}</div>
+    <div class="quiz-feedback microcopy" aria-live="polite"></div></div>`;
+}
+
+async function answerQuestion(button) {
+  const quiz = state.quiz;
+  const q = quiz.questions[quiz.index];
+  if (q.answered) return;
+  q.answered = true;
+  const chosen = q.choices[Number(button.dataset.choice)];
+  const right = chosen === q.answer;
+  if (right) quiz.score += 1;
+  $$q('#ladderQuizBody .quiz-choices button').forEach(b => {
+    const text = q.choices[Number(b.dataset.choice)];
+    if (text === q.answer) b.classList.add('right'); else if (b === button) b.classList.add('wrong');
+    b.disabled = true;
+  });
+  const notes = (q.notes || []).length ? ` ${q.notes.join(' ')}` : '';
+  $('#ladderQuizBody .quiz-feedback').innerHTML = `${right ? 'Correct.' : `Not quite. The answer is “${esc(q.answer)}”.`}${esc(notes)}
+    <div class="button-row"><button type="button" id="ladderQuizNext">${quiz.index + 1 < quiz.questions.length ? 'Next question' : 'See my score'}</button></div>`;
+  if (appState.user) {
+    try { await post('/api/progress', {learner: appState.user.username, item_type: `ladder-quiz-${quiz.language}`, item_id: String(q.id), score: right ? 1 : 0}); } catch { /* progress is optional */ }
+  }
+}
+
+function $$q(selector) { return Array.from(document.querySelectorAll(selector)); }
+
+async function startQuiz() {
+  const params = new URLSearchParams({language: $('#ladderQuizLanguage').value, explain: $('#ladderQuizExplain').value, mode: $('#ladderQuizMode').value, count: '10'});
+  try {
+    const data = await get(`/api/ancient/quiz?${params}`);
+    state.quiz = {...data, index: 0, score: 0};
+    renderQuestion();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
 export async function initLadder() {
   try {
     const data = await get('/api/ancient/languages');
     state.languages = data.languages;
+    state.modern = data.modern_languages || [];
+    state.mt = Boolean(data.machine_translation_available);
     const c = data.coverage.concepts;
-    $('#ladderCoverage').textContent = `${c.nouns} nouns, ${c.verbs} verbs and ${c.adjectives} adjectives, each aligned across ${state.languages.length} languages, in past and present tense for every person.`;
+    $('#ladderCoverage').textContent = `${c.nouns} nouns, ${c.verbs} verbs and ${c.adjectives} adjectives, each aligned across ${state.languages.length} languages, in past and present tense for every person, positive, negative and as questions.`;
   } catch (error) {
     toast(`Ancient ladder unavailable: ${error.message}`);
     return;
@@ -177,6 +250,14 @@ export async function initLadder() {
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) translate();
   });
   $('#ladderSwapBtn').addEventListener('click', () => reuse($('#ladderTarget').value));
+  $('#ladderQuizStart').addEventListener('click', startQuiz);
+  $('#ladderQuizBody').addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    if (button.dataset.choice !== undefined) answerQuestion(button);
+    if (button.id === 'ladderQuizNext') { state.quiz.index += 1; renderQuestion(); }
+    if (button.id === 'ladderQuizAgain') startQuiz();
+  });
   $('#ladderResults').addEventListener('click', async event => {
     const button = event.target.closest('button');
     if (!button) return;

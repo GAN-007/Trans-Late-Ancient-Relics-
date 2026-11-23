@@ -175,7 +175,7 @@
       <article class="card">
         <div class="section-kicker">ANY LANGUAGE ⇄ ANY LANGUAGE</div>
         <h2 id="ladderTitle">The ancient language ladder</h2>
-        <p class="muted">Write in English, Swahili or any of the oldest recoverable stages of Sumerian, Egyptian, Latin, Arabic, Ge'ez, Amharic and their reconstructed ancestors. The meaning is carried across every rung, with each language's own script.</p>
+        <p class="muted">Write in English, Swahili or any of the oldest recoverable stages of Sumerian, Egyptian, Latin, Arabic, Ge'ez, Amharic and their reconstructed ancestors, or in a modern language such as French, German, Russian, Chinese or Hebrew. The meaning is carried across every rung, with each language's own script.</p>
         <div class="row">
           <label for="ladderSource">Write in
             <select id="ladderSource"></select>
@@ -194,7 +194,8 @@
         <details>
           <summary>What can it understand?</summary>
           <p class="microcopy" id="ladderCoverage">Loading coverage…</p>
-          <p class="microcopy">Statements with a subject, a verb and an object (“The king made a great house”), “I am a …” sentences, noun phrases and single words. Ancient input can be typed in transliteration (accents and sign numbers optional) or pasted in its native script: cuneiform, hieroglyphs, fidel, Old Italic letters, Safaitic or early Arabic.</p>
+          <p class="microcopy">Statements with a subject, a verb and an object (“The king made a great house”), negatives (“I did not see the king”), yes/no questions (“Did the scribe write the name?”), “X is Y” sentences (“The sun is great”, “The king is not a servant”), noun phrases and single words. Anything it cannot express (a second object, “of”, plurals) is listed as not translated rather than dropped silently. Ancient input can be typed in transliteration (accents and sign numbers optional) or pasted in its native script: cuneiform, hieroglyphs, fidel, Old Italic letters, Safaitic or early Arabic.</p>
+          <p class="microcopy">Modern languages other than English and Swahili go through the universal machine translator into English and then up the ladder; those steps are labelled machine translation.</p>
         </details>
         <p class="microcopy" id="ladderPolicy"></p>
       </article>
@@ -206,6 +207,20 @@
       </article>
     </div>
     <div id="ladderResults" class="ladder-results" aria-live="polite"></div>
+    <article class="card ladder-quiz" id="ladderQuizCard" aria-labelledby="ladderQuizTitle">
+      <div class="section-kicker">PRACTICE</div>
+      <h2 id="ladderQuizTitle">Quiz yourself on any rung</h2>
+      <p class="muted">Words both ways, and whole sentences where the wrong answers differ only by a negative, a tense, a person or a noun, so you have to really read them.</p>
+      <div class="row wrap">
+        <label for="ladderQuizLanguage">Language<select id="ladderQuizLanguage"></select></label>
+        <label for="ladderQuizExplain">Answer in<select id="ladderQuizExplain"><option value="english">English</option><option value="swahili">Kiswahili</option></select></label>
+        <label for="ladderQuizMode">Questions<select id="ladderQuizMode">
+          <option value="mixed">Mixed</option><option value="meaning">What does it mean?</option>
+          <option value="form">How do you write it?</option><option value="sentence">Read a sentence</option></select></label>
+      </div>
+      <div class="button-row"><button id="ladderQuizStart">Start quiz</button></div>
+      <div id="ladderQuizBody" aria-live="polite"></div>
+    </article>
   </section>
 
   <section id="avatar" class="tab" aria-labelledby="avatarTitle">

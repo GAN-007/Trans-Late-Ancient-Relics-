@@ -12,7 +12,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..ancient.engine import LADDER_ORDER, LadderError, language_id, translate as ladder_translate
+from ..ancient.bridge import MODERN_LANGUAGES, translate_any
+from ..ancient.engine import LADDER_ORDER, LadderError
 from ..ancient.grammar import REALIZERS
 from . import reading as reading_mod
 from . import tutor
@@ -36,13 +37,15 @@ ANCIENT_IDS = [lang for lang in LADDER_ORDER if lang not in {"english", "swahili
 
 TOOL_SPECS: list[dict[str, Any]] = [
     _schema("translate_ancient",
-            "Translate a short sentence or word between English/Swahili and the ancient languages using the app's verified grammar engine. "
-            "Use this for Sumerian, Egyptian (hieroglyphic, Old, Middle), Old Latin, Old Arabic, Ge'ez, Old Amharic, Proto-Semitic and Proto-World. "
-            "Results include native scripts and an honest status (attested, composed, reconstructed, hypothetical).",
-            {"text": {"type": "string", "description": "The sentence or word, in English, Swahili or an ancient language."},
-             "source_language": {"type": "string", "description": "english, swahili, or an ancient language id.", "enum": LADDER_ORDER},
-             "target_languages": {"type": "array", "items": {"type": "string", "enum": LADDER_ORDER + ["all"]},
-                                  "description": "Languages to translate into; ['all'] for every rung."}},
+            "Translate a short sentence or word between any languages and the ancient languages using the app's verified grammar engine. "
+            "Covers Sumerian, Egyptian (hieroglyphic, Old, Middle), Old Latin, Old Arabic, Ge'ez, Old Amharic, Proto-Semitic and Proto-World, "
+            "with English and Swahili directly and modern languages (French, German, Russian, Chinese, Hebrew, …) through machine translation via English. "
+            "Handles statements, negation, yes/no questions and 'X is Y' sentences. Results include native scripts, an honest status "
+            "(attested, composed, reconstructed, hypothetical, machine_translation) and a warning listing anything that was not translated.",
+            {"text": {"type": "string", "description": "The sentence or word, in any supported language."},
+             "source_language": {"type": "string", "description": "A ladder id (" + ", ".join(LADDER_ORDER) + ") or a modern language (" + ", ".join(MODERN_LANGUAGES) + ")."},
+             "target_languages": {"type": "array", "items": {"type": "string"},
+                                  "description": "Languages to translate into (same ids as source_language); ['all'] for every ancient rung."}},
             ["text", "source_language", "target_languages"]),
     _schema("read_script",
             "Read native-script ancient text (hieroglyphs, cuneiform, Ge'ez fidel, Old Italic, Safaitic, Arabic letters) as a lesson: "
@@ -94,27 +97,31 @@ def chat_tools() -> list[dict[str, Any]]:
 
 # ------------------------------------------------------------------ implementations
 def _ladder_rows(result: dict[str, Any], targets: list[str]) -> list[dict[str, Any]]:
-    return [{"language": lang, "name": REALIZERS[lang].name, "text": r["text"], "scripts": r["scripts"],
-             "status": r["status"], "confidence": r["confidence"], "refusal": r.get("refusal")}
+    return [{"language": lang, "name": REALIZERS[lang].name if lang in REALIZERS else r.get("language_name", lang),
+             "text": r["text"], "scripts": r["scripts"], "status": r["status"], "confidence": r["confidence"], "refusal": r.get("refusal")}
             for lang in targets if (r := result["results"].get(lang))]
 
 
-def translate_ancient(ctx: Any, text: str, source_language: str = "english", target_languages: list[str] | None = None) -> ToolOutcome:
+async def translate_ancient(ctx: Any, text: str, source_language: str = "english", target_languages: list[str] | None = None) -> ToolOutcome:
     try:
-        source = language_id(source_language)
-        targets = target_languages or ["all"]
-        result = ladder_translate(text, source, "all" if "all" in targets else [language_id(t) for t in targets])
+        result = await translate_any(text, source_language, target_languages or ["all"])
     except LadderError as exc:
         return ToolOutcome({"ok": False, "error": str(exc)})
     if not result["ok"]:
         return ToolOutcome({"ok": False, "unknown_words": result["parse"]["unknown_words"], "message": result.get("message"),
                             "advice": "Tell the learner which words the grammar engine does not know; do not invent ancient forms."})
     rows = _ladder_rows(result, result["targets"])
-    card = {"type": "ladder", "source": text, "source_language": source, "rows": rows}
+    card = {"type": "ladder", "source": text, "source_language": result["source_language"], "rows": rows}
+    if result.get("warning"):
+        card["warning"] = result["warning"]
     slim = {r["language"]: {"text": r["text"], "status": r["status"], "refusal": r["refusal"]} for r in rows}
-    return ToolOutcome({"ok": True, "meaning": result["meaning"], "translations": slim,
-                        "note": "Composed sentences are built by grammar rules, not quoted from ancient texts. A card with every script is already on screen."},
-                       [{"type": "card", "card": card}])
+    output: dict[str, Any] = {"ok": True, "meaning": result["meaning"], "translations": slim, "complete": result.get("complete", True),
+                              "note": "Composed sentences are built by grammar rules, not quoted from ancient texts. A card with every script is already on screen."}
+    if result.get("warning"):
+        output["warning"] = result["warning"] + " Tell the learner plainly which part was not translated."
+    if result.get("bridge"):
+        output["bridge"] = result["bridge"]
+    return ToolOutcome(output, [{"type": "card", "card": card}])
 
 
 def read_script(ctx: Any, text: str) -> ToolOutcome:
@@ -221,7 +228,7 @@ def list_capabilities(ctx: Any) -> ToolOutcome:
     })
 
 
-SYNC_TOOLS = {"translate_ancient": translate_ancient, "read_script": read_script, "lookup_word": lookup_word,
+SYNC_TOOLS = {"read_script": read_script, "lookup_word": lookup_word,
               "teach_phrase": teach_phrase, "start_quiz": start_quiz, "app_action": app_action, "list_capabilities": list_capabilities}
 
 
@@ -238,6 +245,8 @@ async def execute(ctx: Any, name: str, arguments: str | dict[str, Any]) -> ToolO
     try:
         if name == "translate_modern":
             return await translate_modern(ctx, **args)
+        if name == "translate_ancient":
+            return await translate_ancient(ctx, **args)
         return SYNC_TOOLS[name](ctx, **args)
     except TypeError as exc:
         return ToolOutcome({"ok": False, "error": f"Bad arguments for {name}: {exc}"})

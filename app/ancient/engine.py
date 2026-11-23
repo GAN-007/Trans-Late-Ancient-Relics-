@@ -100,18 +100,25 @@ def translate(text: str, source: str, target: str | list[str] = "all") -> dict[s
         "source_language": src,
         "targets": targets,
         "meaning": frame,
-        "parse": {"unknown_words": parsed["unknown"], "notes": parsed["notes"], "ambiguities": parsed["ambiguities"]},
+        "parse": {"unknown_words": parsed["unknown"], "notes": parsed["notes"], "ambiguities": parsed["ambiguities"],
+                  "not_translated": parsed.get("dropped", [])},
         "accuracy_policy": ACCURACY_POLICY,
         "results": {},
     }
     if frame is None:
         response["message"] = (
             "The sentence could not be mapped to a meaning the ladder knows. It understands statements like "
-            "'I trusted the truth', 'The king made a great house', 'I am a servant', or single words from its "
+            "'I trusted the truth', 'The king made a great house', 'The sun is great', 'I did not see the king', "
+            "'Did the scribe write the name?', or single words from its "
             f"{len(nouns())}-noun, {len(verbs())}-verb concept lexicon."
         )
         return response
-    if parsed["unknown"]:
+    left_out = [f"'{w}'" for w in dict.fromkeys(parsed["unknown"])] + parsed.get("dropped", [])
+    # Never translate part of a sentence silently: say exactly what was left out.
+    response["complete"] = not left_out
+    if left_out:
+        response["warning"] = ("Not translated: " + ", ".join(left_out) + ". The ladder translates one subject, verb and "
+                               "object (or 'X is Y'), with negation and yes/no questions; the rest of the sentence was left out.")
         response["parse"]["notes"].append("Some words were not recognized and were left out of the meaning.")
     for lang in targets:
         response["results"][lang] = REALIZERS[lang].realize(frame)

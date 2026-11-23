@@ -14,7 +14,7 @@ from functools import lru_cache
 SUMERIAN_AFFIX_SIGNS: dict[str, str] = {
     "mu": "MU", "e": "E", "un": "UN", "en": "EN", "de3": "NE", "ze2": "ZI",
     "eš": "ESH2", "ba": "BA", "i3": "NI", "ne": "NE", "še3": "ESH2", "ra": "RA",
-    "a": "A", "me": "ME", "am3": "AN", "ĝu10": "MU", "bi2": "NE",
+    "a": "A", "me": "ME", "am3": "AN", "ĝu10": "MU", "bi2": "NE", "nu": "NU",
 }
 
 
@@ -142,9 +142,14 @@ _ARABIC_VOWELS = set("aiuāīū")
 _SUN_LETTERS = set("tṯdḏrzsšṣḍṭẓln")
 
 
+_ARABIC_PARTICLES = {"mā": "ما", "lā": "لا", "ʾa-mā": "أما", "ʾa-lā": "ألا"}
+
+
 def _arabic_core(word: str, *, noun_feminine: bool, plural_verb: bool) -> str:
     """Consonantal Arabic spelling of one vocalized transliterated token."""
     w = unicodedata.normalize("NFC", word)
+    if w in _ARABIC_PARTICLES:  # negatives are spelled with alif, not alif maqṣūra
+        return _ARABIC_PARTICLES[w]
     prefix = ""
     for clitic in ("bi-", "li-", "wa-", "fa-"):
         if w.startswith(clitic):

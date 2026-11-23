@@ -40,7 +40,7 @@ v3 extends the v2 multimodal platform with a real epigraphy-analysis layer, opti
 
 ## Ancient Language Ladder
 
-Translate any-to-any between English, Swahili and the oldest recoverable stages of Sumerian (archaic, c. 2600 BCE), Egyptian (archaic hieroglyphic, Old and Middle), Latin (Old Latin), Arabic (pre-Islamic Old Arabic), Ge'ez, Amharic (Old Amharic), Proto-Semitic and Proto-World. Output comes with each language's own script (cuneiform, hieroglyphs, fidel, Old Italic, Safaitic, early Arabic) and an honest status: attested word, composed sentence, reconstructed or hypothetical.
+Translate any-to-any between English, Swahili and the oldest recoverable stages of Sumerian (archaic, c. 2600 BCE), Egyptian (archaic hieroglyphic, Old and Middle), Latin (Old Latin), Arabic (pre-Islamic Old Arabic), Ge'ez, Amharic (Old Amharic), Proto-Semitic and Proto-World. Output comes with each language's own script (cuneiform, hieroglyphs, fidel, Old Italic, Safaitic, early Arabic) and an honest status: attested word, composed sentence, reconstructed or hypothetical. Statements, negatives, yes/no questions and "X is Y" sentences are carried across every rung, nothing is dropped silently, and modern languages (French, German, Russian, Chinese, Hebrew and more) connect through the universal machine translator. The **Quiz yourself** panel tests words and whole sentences on every rung.
 
 ```bash
 python cli.py ladder "The truth, I have put my trust in" --brief

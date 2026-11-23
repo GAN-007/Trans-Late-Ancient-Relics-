@@ -30,21 +30,43 @@ any input text ──► parser ──► meaning frame ──► realizer ─�
 
 | Module | Role |
 |---|---|
-| `app/data/ancient/lexicon.json` | Concept lexicon: 33 nouns, 2 adjectives and 16 verbs aligned across all languages, each with a confidence and notes |
+| `app/data/ancient/lexicon.json` | Concept lexicon: 35 nouns, 2 adjectives and 17 verbs aligned across all languages, each with a confidence and notes |
 | `app/ancient/grammar.py` | One realizer per language: case, agreement, word order, verb conjugation for 8 persons × past/present |
 | `app/ancient/parsing.py` | English and Swahili parsers; reverse index for every ancient language and script |
 | `app/ancient/scripts.py` | Cuneiform, hieroglyph, fidel, Old Italic, Safaitic and Arabic renderers; every glyph comes from its official Unicode name |
 | `app/ancient/engine.py` | Language registry, aliases, `translate()` and `concept_table()` |
+| `app/ancient/bridge.py` | Modern languages (French, German, Russian, Chinese, Hebrew, …) to and from the ladder through English with the universal machine translator |
+| `app/ancient/quiz.py` | Quizzes for every rung: word meaning, word form and whole sentences |
+
+Sentence types: statements (subject, verb, object), **negatives**, **yes/no questions**, and **nominal sentences** with a noun or adjective predicate ("I am a servant", "The king is a servant", "The sun is great"), each in past and present for all eight persons.
 
 Grammar each realizer applies:
 
-- **Sumerian**: SOV, ergative *-e* on transitive subjects, terminative *-še3*, *mu-/ba-* prefixes, *ḫamṭu* (perfective) and *marû* (imperfective) suffix sets, enclitic copula (*lugal-me-en* "I am king").
-- **Egyptian**: VSO, *sḏm.n.f* perfect and *sḏm.f* present, suffix pronouns, independent pronouns (*jnk nswt*), feminine adjective agreement, *mḥ jb* "fill the heart" for *trust*.
-- **Old Latin**: archaic endings (*-os*, *-om*, dative *-ei/-oi/-ai*, perfect *-ei*), verbs governing dative/accusative/*ad*/*in*, SOV.
-- **Old Arabic**: VSO, case endings and nunation, definite article with sun-letter assimilation, perfect and imperfect conjugation, prepositions *ʿalā*, *bi-*, *ʾilā*.
-- **Ge'ez**: VSO, *-ku* perfect, accusative *-a*, *ba-* clitic.
-- **Old Amharic**: SOV, definite *-u/-wa*, accusative *-n*, copula *nəññ/näw*.
-- **Proto-Semitic**: reconstructed case vowels and suffix conjugation (*-ku*), prefixed imperfect.
+- **Sumerian**: SOV, ergative *-e* on transitive subjects, terminative *-še3*, *mu-/ba-* prefixes, *ḫamṭu* (perfective) and *marû* (imperfective) suffix sets, enclitic copula (*lugal-me-en* "I am king", *utu gal-am3* "the sun is great"), negative *nu-* (*nu-mu-un-du3*). Questions are not marked in writing (editorial "?").
+- **Egyptian**: VSO, *sḏm.n.f* perfect and *sḏm.f* present, suffix pronouns, independent pronouns (*jnk nswt*), feminine adjective agreement, *mḥ jb* "fill the heart" for *trust*; negation *n sḏm.f* "did not" and *n sḏm.n.f* "does not" (Gardiner §105), questions with *jn*, adjectival sentences (*nfr sw*, *ꜥꜣ rꜥ*) and *A pw B*.
+- **Old Latin**: archaic endings (*-os*, *-om*, dative *-ei/-oi/-ai*, perfect *-ei*), verbs governing dative/accusative/*ad*/*in*, SOV; *non*, questions with fronted verb + *-ne*, *nonne*; predicate adjectives agree in gender (*sol magnos est*).
+- **Old Arabic**: VSO, case endings and nunation, definite article with sun-letter assimilation, perfect and imperfect conjugation, prepositions *ʿalā*, *bi-*, *ʾilā*; *mā* + perfect, *lā* + imperfect, *hal* / *ʾa-* questions, nominal sentences (*aš-šamsu kabīratun*) and *laysa* with an accusative predicate.
+- **Ge'ez**: VSO, *-ku* perfect, accusative *-a*, *ba-* clitic; negative *ʾi-*, question enclitic *-nu*, copular *wəʾətu*.
+- **Old Amharic**: SOV, definite *-u/-wa*, accusative *-n*, copula *nəññ/näw*; negative perfect *ʾal-…-m*, negative imperfect *ʾay-…-m*, negative copula *ʾaydälläm*.
+- **Swahili**: noun-class agreement, negative concords (*hakuona*, *haoni*, *sikwenda*), copula *ni/si*, *Je* questions.
+- **Proto-Semitic**: reconstructed case vowels and suffix conjugation (*-ku*), prefixed imperfect, negative *\*lā*.
+
+Where a stage has no secure form, it refuses with a reason instead of guessing: negated nominal sentences in Sumerian, Ge'ez, Egyptian and Proto-Semitic; plural adjective agreement where the lexicon has no plural forms; anything beyond roots in Proto-World; anything beyond labels in archaic hieroglyphic.
+
+## Modern languages
+
+French, German, Russian, Chinese, Hebrew, Spanish, Portuguese, Italian, Japanese, Hindi, modern Arabic, Korean, Turkish, Persian, Dutch, Ukrainian, Polish, Urdu, Classical Latin and modern Amharic connect to every rung through English:
+
+```text
+French ──MT──► English ──► ladder grammar ──► Sumerian, Egyptian, Old Latin, …
+Old Latin ──► ladder grammar ──► English ──MT──► Chinese
+```
+
+The ancient forms always come from the ladder's grammar, never from the machine translator; each machine-translated step has the status `machine_translation`, and a modern source shows the English it was read as (`bridge.english`). Modern to modern goes directly through the translator. This needs `UNIVERSAL_MT_BASE_URL` (Hy-MT2) or `GOOGLE_CLOUD_TRANSLATE_API_KEY`; without one, modern rows say so instead of failing silently.
+
+## Quizzes
+
+`GET /api/ancient/quiz?language=archaic_sumerian&explain=english|swahili&mode=mixed|meaning|form|sentence&count=10`, and the *Quiz yourself* panel in the Ancient Ladder tab. Sentence questions show a composed sentence; the wrong answers differ from the right one only by negation, tense, person, a noun or the question, and only if the ancient sentence also looks different, so each question can be answered by reading. Archaic hieroglyphic and Proto-World have word quizzes only. The live guide's tutor mode works on any lesson it builds.
 
 ## Honesty rules
 
@@ -58,19 +80,23 @@ Every result carries a `status` and a `confidence`:
 | `hypothetical` | Proto-World roots; capped at 0.15. |
 | `not_attested_for_this_structure` | The language did not write this kind of sentence (archaic hieroglyphs, Proto-World). Only content-word labels are given, with a `refusal` explanation. |
 
-Gaps are reported, never filled: a concept with no known form in a language comes back as a `gap`. Unknown input words are listed in `parse.unknown_words`, and homographs (Latin *estis*, Sumerian 𒀭 *an/diĝir*, vowel-less Safaitic) are listed in `parse.ambiguities`.
+Gaps are reported, never filled: a concept with no known form in a language comes back as a `gap`. Unknown input words are listed in `parse.unknown_words`, and homographs (Latin *estis*, Sumerian 𒀭 *an/diĝir* and *dù* "build/make", Egyptian 𓏞𓀀 "scribe / I write", vowel-less Safaitic) are listed in `parse.ambiguities`.
+
+Nothing is translated partially in silence. When part of a sentence is outside the grammar (a second object, "of", a plural, an unknown word), the response has `"complete": false`, `parse.not_translated` lists the parts, and `warning` says so in plain words; the browser and the live guide show and say it.
 
 ## Using it
 
 API:
 
 ```http
-GET  /api/ancient/languages
+GET  /api/ancient/languages                 (ladder languages, modern languages, machine_translation_available)
 POST /api/ancient/translate      {"text": "The truth, I have put my trust in", "source": "english", "targets": []}
+POST /api/ancient/translate      {"text": "Le roi n'a pas vu le fleuve", "source": "french", "targets": ["archaic_sumerian", "chinese"]}
+GET  /api/ancient/quiz?language=middle_egyptian&mode=sentence
 GET  /api/ancient/concepts/truth
 ```
 
-`targets` may name any language ids or aliases (`sw`, `latin`, `ge'ez`, `proto-semitic`, ...); empty means all.
+`targets` may name any language ids or aliases (`sw`, `latin`, `ge'ez`, `proto-semitic`, `french`, `zh`, ...); empty means every ancient rung.
 
 CLI:
 
@@ -99,6 +125,7 @@ Example: *"The truth, I have put my trust in"*
 ## Limits and next steps
 
 - The vocabulary is a curated core, not a full dictionary. Add a concept by adding one entry to `lexicon.json`; the parsers pick it up automatically, and `tests/test_ancient_ladder.py` checks that every new form reads back.
-- Sentences cover statements (subject, verb, object, one adjective) and "I am …" sentences. Questions, negation, relative clauses and future tense are not modelled yet.
+- Sentences cover one subject, verb and object (with one adjective), negation, yes/no questions and nominal sentences. Second objects, possession ("of"), plural nouns, relative clauses, wh-questions and the future are not modelled yet; they are reported as not translated (the future falls back to the present with a note).
+- Not yet ladder stages: Akkadian (Old Babylonian), Biblical/Paleo-Hebrew, Classical Latin and Classical Arabic as separate rungs. Modern Hebrew, Classical Latin and modern Arabic are reachable through the machine-translation bridge.
 - Earliest Sumerian and Old Amharic left much grammar unwritten; the fuller later spellings are used and noted per result.
 - Display of native scripts depends on installed fonts (Noto Sans Cuneiform, Egyptian Hieroglyphs, Ethiopic, Old Italic and Old North Arabian cover all of them).
