@@ -18,6 +18,7 @@ from .active_learning import (
     submit_vision_correction,
 )
 from .ai import ai_status
+from .ancient.engine import LadderError, concept_table, coverage as ladder_coverage, languages as ladder_languages, translate as ladder_translate
 from .auth import (
     authenticate,
     clear_session_cookie,
@@ -56,6 +57,7 @@ from .knowledge import (
 )
 from .learning_loop import background_loop, knowledge_loop_status, run_knowledge_cycle
 from .models import (
+    AncientTranslationRequest,
     ContextualTranslationRequest,
     CorrectionReviewRequest,
     ESHBEncodeRequest,
@@ -168,6 +170,7 @@ def health():
         "ai": ai_status(),
         "vision": vision_status(),
         "universal_translation": universal_capabilities(),
+        "ancient_ladder": ladder_coverage(),
     }
 
 
@@ -180,6 +183,7 @@ def capabilities(request: Request):
         "vision": vision_status(),
         "streaming": streaming_capabilities(),
         "universal_translation": universal_capabilities(),
+        "ancient_ladder": {"languages": [lang["id"] for lang in ladder_languages()], **ladder_coverage()},
         "epigraphy": epigraphy_capabilities(),
         "active_learning": collection_policy(),
         "knowledge_loop": knowledge_loop_status(),
@@ -203,6 +207,7 @@ def capabilities(request: Request):
             "pwa": True,
             "human_reviewed_learning_loop": True,
             "opt_in_active_learning": True,
+            "ancient_language_ladder": True,
         },
     }
 
@@ -393,6 +398,30 @@ async def modern_language_translate(req: UniversalTranslationRequest, request: R
         return await universal_translate(req)
     except TranslationError as exc:
         raise HTTPException(status_code=exc.status, detail=str(exc)) from exc
+
+
+# ---------------- Ancient Language Ladder (any-to-any) ----------------
+@app.get("/api/ancient/languages")
+def ancient_languages():
+    return {"languages": ladder_languages(), "coverage": ladder_coverage()}
+
+
+@app.post("/api/ancient/translate")
+def ancient_translate(req: AncientTranslationRequest, request: Request):
+    from .security import check_rate_limit
+    check_rate_limit(request, "ancient-translate", 120, 60)
+    try:
+        return ladder_translate(req.text, req.source, req.targets or "all")
+    except LadderError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/api/ancient/concepts/{concept}")
+def ancient_concept(concept: str):
+    try:
+        return concept_table(concept)
+    except LadderError as exc:
+        raise HTTPException(404, str(exc)) from exc
 
 
 # ---------------- Live camera / multimodal analysis ----------------

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#1d1710">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="Live Ancient Egyptian learning and contextual translation with English, Swahili, hieroglyphs, voice and camera assistance.">
+  <meta name="description" content="Live Ancient Egyptian learning and contextual translation with English, Swahili, hieroglyphs, voice and camera assistance, plus an any-to-any ladder across the oldest stages of Sumerian, Egyptian, Latin, Arabic, Ge'ez and Amharic.">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/styles.css">
@@ -33,6 +33,7 @@
 
 <nav id="tabs" class="tabs" aria-label="Main sections">
   <button data-tab="translate" class="active">Translate</button>
+  <button data-tab="ladder">Ancient Ladder</button>
   <button data-tab="lens">Live Lens</button>
   <button data-tab="talk">Talk</button>
   <button data-tab="learn">Learn</button>
@@ -110,7 +111,7 @@
         </div>
       </article>
     </div>
-    <div class="grid two" style="margin-top:24px">
+    <div class="grid two stack-gap">
       <article class="card">
         <div class="section-kicker">MULTILINGUAL NEURAL TRANSLATION</div>
         <h2 id="universalTitle">Translate modern languages</h2>
@@ -165,6 +166,44 @@
         <p class="microcopy">Neural translations may be incorrect. Ancient inscriptions, sign language, unrecognized sound and radio signals require different evidence and specialist models.</p>
       </article>
     </div>
+  </section>
+
+  <section id="ladder" class="tab" aria-labelledby="ladderTitle">
+    <div class="grid two">
+      <article class="card">
+        <div class="section-kicker">ANY LANGUAGE ⇄ ANY LANGUAGE</div>
+        <h2 id="ladderTitle">The ancient language ladder</h2>
+        <p class="muted">Write in English, Swahili or any of the oldest recoverable stages of Sumerian, Egyptian, Latin, Arabic, Ge'ez, Amharic and their reconstructed ancestors. The meaning is carried across every rung, with each language's own script.</p>
+        <div class="row">
+          <label for="ladderSource">Write in
+            <select id="ladderSource"></select>
+          </label>
+          <label for="ladderTarget">Translate to
+            <select id="ladderTarget"><option value="all">Every language</option></select>
+          </label>
+        </div>
+        <label for="ladderInput">Sentence or word</label>
+        <textarea id="ladderInput" rows="3" maxlength="500">The truth, I have put my trust in</textarea>
+        <div class="ladder-examples" id="ladderExamples" aria-label="Example sentences"></div>
+        <div class="button-row wrap">
+          <button id="ladderTranslateBtn">Translate across the ladder</button>
+          <button id="ladderSwapBtn" class="secondary" disabled>Swap direction</button>
+        </div>
+        <details>
+          <summary>What can it understand?</summary>
+          <p class="microcopy" id="ladderCoverage">Loading coverage…</p>
+          <p class="microcopy">Statements with a subject, a verb and an object (“The king made a great house”), “I am a …” sentences, noun phrases and single words. Ancient input can be typed in transliteration (accents and sign numbers optional) or pasted in its native script: cuneiform, hieroglyphs, fidel, Old Italic letters, Safaitic or early Arabic.</p>
+        </details>
+        <p class="microcopy" id="ladderPolicy"></p>
+      </article>
+      <article class="card result-card" aria-live="polite" aria-busy="false" id="ladderCard">
+        <div class="section-kicker">MEANING</div>
+        <h2>What the sentence says</h2>
+        <div id="ladderEmpty" class="empty-state">Translate something to see the meaning the ladder found, any words it did not recognize, and where readings were ambiguous.</div>
+        <div id="ladderMeaning" hidden></div>
+      </article>
+    </div>
+    <div id="ladderResults" class="ladder-results" aria-live="polite"></div>
   </section>
 
   <section id="lens" class="tab" aria-labelledby="lensTitle">

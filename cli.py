@@ -5,6 +5,7 @@ import asyncio
 import json
 
 from app.ai import ai_status
+from app.ancient.engine import LADDER_ORDER, translate as ladder_translate
 from app.contextual import contextual_translate
 from app.egyptian import hieroglyphize_phrase, search_dictionary
 from app.eshb import decode, decode_ipa, encode, encode_ipa
@@ -57,6 +58,12 @@ def build_parser() -> argparse.ArgumentParser:
     command = sub.add_parser("pronounce", help="Return a conventional Egyptological classroom reading")
     command.add_argument("transliteration")
 
+    command = sub.add_parser("ladder", help="Translate between English, Swahili and the oldest stages of Sumerian, Egyptian, Latin, Arabic, Ge'ez, Amharic, Proto-Semitic and Proto-World")
+    command.add_argument("text")
+    command.add_argument("--source", default="english", help="Source language id or alias (english, sw, old_latin, geez, ...)")
+    command.add_argument("--target", action="append", help=f"Target language (repeatable); default is all of: {', '.join(LADDER_ORDER)}")
+    command.add_argument("--brief", action="store_true", help="Print only one line per language")
+
     sub.add_parser("status", help="Show optional AI provider status")
     return parser
 
@@ -79,6 +86,17 @@ def main() -> None:
         output = classroom_reading(args.transliteration)
     elif args.cmd == "status":
         output = ai_status()
+    elif args.cmd == "ladder":
+        output = ladder_translate(args.text, args.source, args.target or "all")
+        if args.brief:
+            if not output["ok"]:
+                print(output["message"])
+                if output["parse"]["unknown_words"]:
+                    print("Not recognized: " + ", ".join(output["parse"]["unknown_words"]))
+            for lang, result in output["results"].items():
+                scripts = "  ".join(result["scripts"].values())
+                print(f"{lang:22} {result['text']}  {scripts}  [{result['status']}, {result['confidence']}]")
+            return
     elif args.cmd == "contextual":
         output = asyncio.run(
             contextual_translate(

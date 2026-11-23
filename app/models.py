@@ -114,3 +114,9 @@ class FeedbackRequest(BaseModel):
 class KnowledgeEvidenceRequest(BaseModel):
     evidence: str = Field(default="", max_length=5000)
     source_url: str = Field(default="", max_length=2000)
+
+
+class AncientTranslationRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+    source: str = Field(default="english", min_length=2, max_length=40)
+    targets: list[str] = Field(default_factory=list, max_length=12)
