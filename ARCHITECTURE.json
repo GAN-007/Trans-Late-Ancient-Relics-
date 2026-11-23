@@ -10,7 +10,8 @@
     "Never auto-promote AI linguistic claims, research corrections or candidate models into production knowledge.",
     "Ordinary live frames are transient; research image retention requires explicit per-item consent and server policy.",
     "Classroom pronunciation is not historical vocalization.",
-    "Design for phone, tablet, desktop, research workstation and museum/field use."
+    "Design for phone, tablet, desktop, research workstation and museum/field use.",
+    "Label every ancient form as attested, reconstructed, hypothetical or composed; never present a composed sentence as a quotation."
   ],
   "clients": {
     "browser_pwa": {
@@ -36,7 +37,8 @@
     {"id": "pedagogy", "purpose": "26 lessons, quizzes and authenticated progress"},
     {"id": "knowledge_governance", "purpose": "Proposals, unresolved-term queue, evidence review and runtime lexicon overlay", "auto_approval": false},
     {"id": "active_learning", "purpose": "Opt-in vision corrections, reviewer approval and dataset manifest", "automatic_retraining": false, "automatic_model_promotion": false},
-    {"id": "identity_permissions", "purpose": "scrypt-based accounts, opaque sessions and server-side RBAC"}
+    {"id": "identity_permissions", "purpose": "scrypt-based accounts, opaque sessions and server-side RBAC"},
+    {"id": "ancient_language_ladder", "purpose": "Any-to-any translation through a language-neutral meaning frame: English, Swahili, archaic Sumerian, archaic hieroglyphic, Old and Middle Egyptian, Old Latin, pre-Islamic Old Arabic, Ge'ez, Old Amharic, Proto-Semitic and Proto-World", "modules": ["app/ancient/lexicon.py", "app/ancient/grammar.py", "app/ancient/parsing.py", "app/ancient/scripts.py", "app/ancient/engine.py"], "native_scripts": ["cuneiform", "Egyptian hieroglyphs", "Ge'ez fidel", "Old Italic", "Safaitic", "early undotted Arabic", "Arabic"], "reversible": "generated forms are indexed for parsing; homographs reported as ambiguities", "sentences_claimed_as_attested": false}
   ],
   "roles": {
     "guest": ["translate", "camera", "voice", "dictionary", "lessons", "script/epigraphy tools"],

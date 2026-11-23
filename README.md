@@ -38,6 +38,20 @@ v3 extends the v2 multimodal platform with a real epigraphy-analysis layer, opti
 - human-reviewed knowledge proposals and optional AI draft loop
 - responsive PWA, Docker and Python 3.11–3.13 CI
 
+## Ancient Language Ladder
+
+Translate any-to-any between English, Swahili and the oldest recoverable stages of Sumerian (archaic, c. 2600 BCE), Egyptian (archaic hieroglyphic, Old and Middle), Latin (Old Latin), Arabic (pre-Islamic Old Arabic), Ge'ez, Amharic (Old Amharic), Proto-Semitic and Proto-World. Output comes with each language's own script (cuneiform, hieroglyphs, fidel, Old Italic, Safaitic, early Arabic) and an honest status: attested word, composed sentence, reconstructed or hypothetical.
+
+```bash
+python cli.py ladder "The truth, I have put my trust in" --brief
+```
+
+```http
+POST /api/ancient/translate  {"text": "Mimi ni mtumishi", "source": "swahili", "targets": ["geez", "old_latin"]}
+```
+
+See [`docs/ANCIENT_LANGUAGE_LADDER.md`](docs/ANCIENT_LANGUAGE_LADDER.md).
+
 ## Accuracy boundary
 
 This project does not create authentic Egyptian by mapping English letters to birds or snakes.
@@ -334,6 +348,9 @@ Never commit secrets, `.env` files, private datasets or restricted model weights
 
 ```text
 POST /api/translate/contextual
+GET  /api/ancient/languages
+POST /api/ancient/translate
+GET  /api/ancient/concepts/{concept}
 POST /api/egyptian/analyze-signs
 POST /api/egyptian/analyze-transliteration
 GET  /api/egyptian/epigraphy-capabilities
@@ -353,6 +370,7 @@ Existing ESHB, IPA, MdC, dictionary, lesson, auth, history, feedback and knowled
 
 ## Documentation
 
+- [`docs/ANCIENT_LANGUAGE_LADDER.md`](docs/ANCIENT_LANGUAGE_LADDER.md) — any-to-any ancient language ladder: languages, grammar, honesty rules, API
 - [`docs/V3_GAP_AUDIT.md`](docs/V3_GAP_AUDIT.md) — complete code/logic/data/product gap audit and v3 decisions
 - [`docs/V3_RESEARCH_MODEL_GOVERNANCE.md`](docs/V3_RESEARCH_MODEL_GOVERNANCE.md) — correction, dataset, training and model-promotion rules
 - [`docs/END_TO_END_AUDIT.md`](docs/END_TO_END_AUDIT.md) — v2 audit/history

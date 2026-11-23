@@ -1,4 +1,4 @@
-const CACHE = 'ancient-relics-v3-mt-20261016';
+const CACHE = 'ancient-relics-v3-ladder-20261123';
 const SHELL = [
   '/',
   '/manifest.webmanifest',
@@ -11,6 +11,7 @@ const SHELL = [
   '/static/js/core.js',
   '/static/js/translate.js',
   '/static/js/universal.js',
+  '/static/js/ancient.js',
   '/static/js/lens.js',
   '/static/js/talk.js',
   '/static/js/learn.js',
