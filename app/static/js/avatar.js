@@ -69,7 +69,7 @@ function mouthPaths(w) {
 function trackWeights(now) {
   const track = chat.track;
   if (!track) return null;
-  const t = (now - chat.trackStart) / 1000 + chat.trackOffset;
+  const t = ((now - chat.trackStart) / 1000) / (chat.trackScale || 1) + chat.trackOffset;
   const frames = track.frames;
   if (t > track.duration + 0.25) return null;
   let index = 0;
@@ -82,11 +82,44 @@ function trackWeights(now) {
   return out;
 }
 
+const EXPRESSIONS = {
+  neutral: {smile: 0, brow: 0, browTilt: 0, eye: 1, tilt: 0},
+  happy: {smile: 0.5, brow: -3, browTilt: 0, eye: 0.82, tilt: 1.5},
+  encouraging: {smile: 0.18, brow: -2, browTilt: 6, eye: 1, tilt: -3},
+  teaching: {smile: 0.08, brow: -2.5, browTilt: 0, eye: 1.05, tilt: 0},
+  curious: {smile: 0.12, brow: -4, browTilt: -3, eye: 1.08, tilt: 4},
+  warm: {smile: 0.35, brow: -1.5, browTilt: 0, eye: 0.92, tilt: 1},
+};
+const expr = {smile: 0, brow: 0, browTilt: 0, eye: 1, tilt: 0};
+
+function audioLevel() {
+  const analyser = chat.analyser;
+  if (!analyser || !chat.audioPlaying) return null;
+  const data = chat.levelBuffer || (chat.levelBuffer = new Float32Array(analyser.fftSize));
+  analyser.getFloatTimeDomainData(data);
+  let sum = 0;
+  for (let i = 0; i < data.length; i += 1) sum += data[i] * data[i];
+  return Math.sqrt(sum / data.length);
+}
+
 function renderFace(now) {
-  const fromTrack = chat.speaking ? trackWeights(now) : null;
+  let fromTrack = chat.speaking ? trackWeights(now) : null;
+  // With real audio, the waveform decides when the mouth is open: silence closes it, loudness opens it.
+  const level = audioLevel();
+  if (fromTrack && level !== null) {
+    const voiced = Math.min(1, Math.max(0, (level - 0.012) / 0.05));
+    const loud = Math.min(0.85, level * 4.2);
+    fromTrack = Object.fromEntries(Object.entries(fromTrack).map(([k, v]) => [k, v * (0.35 + 0.65 * voiced)]));
+    fromTrack.jawOpen = Math.max(fromTrack.jawOpen * 0.7, loud * voiced);
+    fromTrack.mouthClose = (fromTrack.mouthClose || 0) + (1 - voiced) * 0.3;
+  }
+  const target = EXPRESSIONS[chat.emotion] || EXPRESSIONS.neutral;
+  Object.keys(expr).forEach(k => { expr[k] += (target[k] - expr[k]) * 0.08; });
   CH.forEach(name => {
-    const target = fromTrack ? fromTrack[name] : (name === 'mouthSmileLeft' || name === 'mouthSmileRight' ? (chat.uiState === 'listening' ? .25 : .12) : 0);
-    face.weights[name] += (target - face.weights[name]) * (fromTrack ? 0.45 : 0.15);
+    const isSmile = name === 'mouthSmileLeft' || name === 'mouthSmileRight';
+    const idle = isSmile ? (chat.uiState === 'listening' ? .25 : .12) : 0;
+    const goal = (fromTrack ? fromTrack[name] : idle) + (isSmile ? expr.smile : 0);
+    face.weights[name] += (goal - face.weights[name]) * (fromTrack ? 0.5 : 0.15);
   });
   const paths = mouthPaths(face.weights);
   $('#avatarLipUpper').setAttribute('d', paths.upperLip);
@@ -99,23 +132,29 @@ function renderFace(now) {
   if (now > face.nextBlink) { face.blink = 1; face.nextBlink = now + 2200 + Math.random() * 3200; }
   face.blink = Math.max(0, face.blink - 0.12);
   const lid = face.blink > 0 ? 1 - Math.abs(face.blink * 2 - 1) : 0;
-  const open = 1 - lid * 0.92;
+  const open = Math.min(1.1, (1 - lid * 0.92) * expr.eye);
   ['#avatarEyeL', '#avatarEyeR'].forEach(id => $(id).setAttribute('transform', `translate(0 186) scale(1 ${open}) translate(0 -186)`));
 
   // eyeLook*, browInnerUp and head motion by state
   const thinking = chat.uiState === 'thinking';
-  const gx = thinking ? 4 : Math.sin(now / 2300) * 1.6;
-  const gy = thinking ? -4 : Math.sin(now / 3100) * 1;
+  // Glance at the camera preview (top right) while reading what the learner shows.
+  const lookingAtCamera = chat.cameraOn && (thinking || chat.lookAtCamera);
+  const gx = lookingAtCamera ? 6 : thinking ? 4 : Math.sin(now / 2300) * 1.6;
+  const gy = lookingAtCamera ? -3 : thinking ? -4 : Math.sin(now / 3100) * 1;
   face.gaze.x += (gx - face.gaze.x) * 0.08;
   face.gaze.y += (gy - face.gaze.y) * 0.08;
   document.querySelectorAll('.avatar-iris, .avatar-glint').forEach(el => el.setAttribute('transform', `translate(${face.gaze.x} ${face.gaze.y})`));
   const browUp = chat.uiState === 'listening' ? -5 : thinking ? -3 : chat.speaking ? -1.5 - face.weights.jawOpen * 3 : 0;
-  $('#avatarBrows').setAttribute('transform', `translate(0 ${browUp})`);
+  $('#avatarBrows').setAttribute('transform', `translate(0 ${browUp + expr.brow})`);
+  $('#avatarBrowL').setAttribute('transform', `rotate(${-expr.browTilt} 186 158)`);
+  $('#avatarBrowR').setAttribute('transform', `rotate(${expr.browTilt} 214 158)`);
+  chat.nod = (chat.nod || 0) * 0.9;
   const calm = REDUCED_MOTION.matches ? 0 : 1;
   const breathe = Math.sin(now / 1400) * 1.4 * calm;
   const tilt = chat.uiState === 'listening' ? 3 : thinking ? -2 : chat.speaking ? Math.sin(now / 520) * 1.2 : Math.sin(now / 4000) * 0.8;
   const nod = chat.speaking ? face.weights.jawOpen * 2.5 : 0;
-  $('#avatarHead').setAttribute('transform', `rotate(${tilt * calm} 200 300) translate(0 ${breathe * 0.6 + nod * calm})`);
+  const listeningNod = Math.sin(now / 90) * 2.2 * (chat.nod || 0);
+  $('#avatarHead').setAttribute('transform', `rotate(${(tilt + expr.tilt) * calm} 200 300) translate(0 ${breathe * 0.6 + (nod + listeningNod) * calm})`);
   $('#avatarBody').setAttribute('transform', `translate(0 ${breathe})`);
   face.raf = requestAnimationFrame(renderFace);
 }
@@ -184,6 +223,8 @@ function handle(name, payload) {
     case 'AvatarSpeech': return enqueueSpeech(payload);
     case 'AvatarCard': return addCard(payload.card);
     case 'AvatarReading': return addReading(payload.reading);
+    case 'AvatarAction': return runAction(payload);
+    case 'AvatarToolUse': return showToolUse(payload.tool);
     case 'AvatarLiveStatus': return onLiveStatus(payload.status);
     case 'LanguageChanged':
       chat.persona = payload.persona;
@@ -218,17 +259,25 @@ function onInitialized(payload) {
     select.innerHTML = chat.personas.map(p => `<option value="${esc(p.id)}">${esc(p.name)} — ${esc(p.title)}</option>`).join('');
   }
   select.value = chat.persona.id;
-  $('#avatarLanguage').value = payload.language || chat.persona.language;
+  chat.languages = payload.languages || [];
+  const langSelect = $('#avatarLanguage');
+  if (chat.languages.length && langSelect.options.length !== chat.languages.length) {
+    langSelect.innerHTML = chat.languages.map(l => `<option value="${esc(l.id)}">${esc(l.label)}</option>`).join('');
+  }
+  langSelect.value = payload.language || chat.persona.language;
+  chat.voiceInfo = payload.voice || {};
   chat.vision = payload.vision || {};
   applyLook(chat.persona);
   renderSuggestions();
   $('#avatarSendBtn').disabled = false;
   $('#avatarMicBtn').disabled = !speechRecognitionSupported();
   $('#avatarModelNote').textContent = payload.llm?.configured
-    ? `Conversation by ${payload.llm.model}; translations come from the verified ancient-language ladder.`
+    ? `Conversation by ${payload.llm.model}, using the platform's own tools; ancient translations come from the verified ladder.${payload.voice?.server_audio ? ` Voice by ${payload.voice.model} (${payload.voice.provider}).` : ''}`
     : 'No language model is connected, so the guide answers translations and word meanings from the built-in ladder. Set OPENAI_API_KEY (or an OpenAI-compatible endpoint) for open conversation.';
   $('#avatarStatus').textContent = speechRecognitionSupported()
-    ? 'Press Start talking and speak, or type below. Your browser does the speech recognition and the voice.'
+    ? (payload.voice?.server_audio
+      ? 'Press Start talking and speak, or type below. Your browser recognizes your speech; the guide speaks with a neural voice and its lips follow the audio.'
+      : 'Press Start talking and speak, or type below. Your browser does the speech recognition and the voice.')
     : 'Voice input is not supported in this browser; type below. The guide still speaks if your browser has voices.';
   setUiState(chat.listening ? 'listening' : 'idle');
   if (chat.wantListening) startListening();
@@ -301,6 +350,7 @@ function playNext() {
   if (!item) {
     chat.speaking = false;
     chat.track = null;
+    chat.emotion = 'neutral';
     highlightSegment(null);
     $('#avatarSubtitle').textContent = '';
     if (chat.uiState === 'speaking') setUiState(chat.listening ? 'listening' : 'idle');
@@ -315,9 +365,10 @@ function playNext() {
   $('#avatarSubtitle').textContent = $('#avatarSubtitles').checked ? item.text : '';
   let started = false;
   let done = false;
-  const startTrack = () => {
+  const startTrack = (duration) => {
     started = true;
     chat.track = item.motion; chat.trackStart = performance.now(); chat.trackOffset = 0;
+    chat.trackScale = duration && item.motion?.duration ? duration / item.motion.duration : 1;
     if (item.quiz === 'start') { chat.quizzing = true; chat.readingCard?.classList.add('quiz'); }
     if (item.quiz_done) {
       chat.quizzing = false;
@@ -338,6 +389,11 @@ function playNext() {
     startTrack();
     chat.silentTimer = setTimeout(finish, Math.max(900, (item.motion?.duration || 1) * 1000 + 250));
   };
+  chat.emotion = item.emotion || 'neutral';
+  if (item.audio && !chat.muted) {
+    playAudio(item, startTrack, finish, silent);
+    return;
+  }
   if (!('speechSynthesis' in window) || chat.muted) return silent();
   const utterance = new SpeechSynthesisUtterance(item.text);
   utterance.lang = item.voice?.lang || 'en-US';
@@ -363,7 +419,47 @@ function playNext() {
   }, 2500);
 }
 
+function audioContext() {
+  if (!chat.audioCtx) {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return null;
+    chat.audioCtx = new Ctor();
+    chat.analyser = chat.audioCtx.createAnalyser();
+    chat.analyser.fftSize = 1024;
+    chat.analyser.connect(chat.audioCtx.destination);
+  }
+  if (chat.audioCtx.state === 'suspended') chat.audioCtx.resume().catch(() => {});
+  return chat.audioCtx;
+}
+
+async function playAudio(item, startTrack, finish, fallback) {
+  const ctx = audioContext();
+  if (!ctx) return fallback();
+  try {
+    const bytes = Uint8Array.from(atob(item.audio), c => c.charCodeAt(0));
+    const buffer = await ctx.decodeAudioData(bytes.buffer);
+    if (!chat.speaking) return;  // interrupted while decoding
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(chat.analyser);
+    chat.audioSource = source;
+    source.onended = () => {
+      chat.audioPlaying = false;
+      if (chat.audioSource === source) chat.audioSource = null;
+      finish();
+    };
+    chat.audioPlaying = true;
+    startTrack(buffer.duration);
+    source.start();
+  } catch {
+    fallback();
+  }
+}
+
 function stopVoice() {
+  try { chat.audioSource?.stop(); } catch { /* already stopped */ }
+  chat.audioSource = null;
+  chat.audioPlaying = false;
   chat.speechQueue = [];
   clearTimeout(chat.silentTimer);
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
@@ -384,9 +480,10 @@ function startListening() {
   chat.wantListening = true;
   chat.recognizer?.abort?.();
   chat.recognizer = createRecognizer({
-    language: chat.persona?.language || 'english',
+    language: (chat.languages || []).find(l => l.id === chat.persona?.language)?.asr || chat.persona?.language || 'english',
     onInterim: text => {
       $('#avatarInput').value = text;
+      chat.nod = 1;  // the guide nods along while you talk
       // Full-duplex barge-in, like OAC's duplex VAD: speaking over the guide interrupts it.
       if ($('#avatarBargeIn').checked && chat.speaking && text.split(/\s+/).length >= 3) interrupt();
     },
@@ -481,10 +578,10 @@ function addReading(reading) {
           <span class="avatar-word-meaning" dir="ltr">${esc(seg.meaning?.[reading.explain_language] || seg.meaning?.english || '—')}</span>
         </button>`).join('')}
     </div>
-    <details class="avatar-reading-signs"><summary>Sign by sign</summary>
+    ${reading.segments.some(seg => (seg.signs || []).length) ? `<details class="avatar-reading-signs"><summary>Sign by sign</summary>
       ${reading.segments.map((seg, i) => `<div class="avatar-sign-row"><span class="microcopy">Word ${i + 1}</span>${(seg.signs || []).map(sign => `
         <span class="avatar-sign" title="${esc(sign.role_label || sign.role)}"><b dir="auto">${esc(sign.glyph)}</b>${sign.code ? `<small>${esc(sign.code)}</small>` : ''}<small>${esc(sign.value || '')}</small><em>${esc(sign.role_label || sign.role)}</em></span>`).join('')}</div>`).join('')}
-    </details>
+    </details>` : ''}
     ${reading.notes?.length ? `<p class="microcopy">${esc(reading.notes.join(' '))}</p>` : ''}
     <div class="avatar-reading-actions">
       <button type="button" class="chip" data-say="${chat.persona?.language === 'swahili' ? 'nijaribu' : 'quiz me'}">${chat.persona?.language === 'swahili' ? 'Nijaribu' : 'Quiz me'}</button>
@@ -689,6 +786,39 @@ function onLiveStatus(status) {
   if (chat.uiState === 'thinking' && !chat.speaking) setUiState(chat.listening ? 'listening' : 'idle');
 }
 
+// ---------------------------------------------------------------- the guide acts in the app
+const TOOL_LABELS = {
+  translate_ancient: 'Translating', read_script: 'Reading', translate_modern: 'Translating', lookup_word: 'Looking it up',
+  teach_phrase: 'Preparing a lesson', start_quiz: 'Starting a quiz', app_action: 'One moment', list_capabilities: 'Checking',
+};
+
+function showToolUse(tool) {
+  if (chat.uiState === 'speaking') return;
+  $('#avatarStateBadge').textContent = `${chat.persona?.name || 'Guide'} · ${TOOL_LABELS[tool] || 'Working'}…`;
+}
+
+async function waitForVideo() {
+  const video = $('#avatarVideo');
+  for (let i = 0; i < 40 && !video.videoWidth; i += 1) await new Promise(r => setTimeout(r, 100));
+  return Boolean(video.videoWidth);
+}
+
+async function runAction({action, tab}) {
+  if (action === 'open_tab' && tab) {
+    document.querySelector(`#tabs button[data-tab="${CSS.escape(tab)}"]`)?.click();
+    return;
+  }
+  if (action === 'stop_live_reading') return stopLive();
+  if (!chat.cameraOn) await toggleCamera();
+  if (!chat.cameraOn) return;
+  if (action === 'read_camera') {
+    chat.lookAtCamera = true;
+    setTimeout(() => { chat.lookAtCamera = false; }, 4000);
+    if (await waitForVideo()) snapAndAsk('', 'camera');
+  }
+  if (action === 'start_live_reading' && !chat.liveTimer) startLive();
+}
+
 // ---------------------------------------------------------------- init
 export function initAvatarChat() {
   if (!$('#avatar')) return;
@@ -704,6 +834,9 @@ export function initAvatarChat() {
   tabButton?.addEventListener('click', begin);
   if (location.hash === '#avatar') begin();
 
+  ['click', 'keydown', 'touchstart'].forEach(kind => document.addEventListener(kind, () => {
+    if (chat.voiceInfo?.server_audio) audioContext();
+  }, {passive: true}));
   $('#avatarForm').addEventListener('submit', event => {
     event.preventDefault();
     sendText($('#avatarInput').value);
