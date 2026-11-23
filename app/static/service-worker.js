@@ -1,4 +1,4 @@
-const CACHE = 'ancient-relics-v3-ladder-any-20261123';
+const CACHE = 'ancient-relics-v3-akkadian-phonetics-20261124';
 const SHELL = [
   '/',
   '/manifest.webmanifest',

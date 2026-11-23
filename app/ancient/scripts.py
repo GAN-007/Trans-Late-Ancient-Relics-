@@ -278,3 +278,85 @@ def arabic_article(stem: str) -> str:
 def arabic_article_elided(stem: str) -> str:
     first = stem[0]
     return f"{first}-" if first in _SUN_LETTERS else "l-"
+
+
+# --------------------------------------------------------- Akkadian syllabic cuneiform
+# Akkadian was written with syllable signs (V, CV, VC; a closed CVC syllable as CV + VC),
+# each borrowed from a Sumerian word sign. Unicode names each sign by its Sumerian value,
+# so the table maps the Akkadian syllable to that sign name (values per Borger, MesZL).
+AKK_VOWEL_SIGNS = {"a": "A", "e": "E", "i": "I", "u": "U2"}
+_AKK_CV: dict[str, dict[str, str]] = {
+    "b": {"a": "BA", "e": "BAD", "i": "BI", "u": "BU"}, "d": {"a": "DA", "e": "DI", "i": "DI", "u": "DU"},
+    "g": {"a": "GA", "e": "GI", "i": "GI", "u": "GU"}, "ḫ": {"a": "HA", "e": "HI", "i": "HI", "u": "HU"},
+    "k": {"a": "KA", "e": "KI", "i": "KI", "u": "KU"}, "l": {"a": "LA", "e": "LI", "i": "LI", "u": "LU"},
+    "m": {"a": "MA", "e": "ME", "i": "MI", "u": "MU"}, "n": {"a": "NA", "e": "NE", "i": "NI", "u": "NU"},
+    "p": {"a": "PA", "e": "BI", "i": "PI", "u": "BU"}, "q": {"a": "SILA3", "e": "KI", "i": "KI", "u": "GUM"},
+    "r": {"a": "RA", "e": "RI", "i": "RI", "u": "RU"}, "s": {"a": "SA", "e": "SI", "i": "SI", "u": "SU"},
+    "ṣ": {"a": "ZA", "e": "ZI", "i": "ZI", "u": "ZU"}, "š": {"a": "SHA", "e": "SHE", "i": "IGI", "u": "SHU"},
+    "t": {"a": "TA", "e": "TE", "i": "TI", "u": "TU"}, "ṭ": {"a": "DA", "e": "TE", "i": "DI", "u": "DU"},
+    "w": {"a": "PI", "e": "PI", "i": "PI", "u": "PI"}, "z": {"a": "ZA", "e": "ZI", "i": "ZI", "u": "ZU"},
+}
+_AKK_VC: dict[str, dict[str, str]] = {
+    "a": {"b": "AB", "p": "AB", "d": "AD", "t": "AD", "ṭ": "AD", "g": "AK", "k": "AK", "q": "AK", "ḫ": "HI TIMES NUN",
+          "l": "AL", "m": "GUD TIMES KUR", "n": "AN", "r": "IGI RI", "s": "PIRIG TIMES ZA", "z": "PIRIG TIMES ZA",
+          "ṣ": "PIRIG TIMES ZA", "š": "ASH"},
+    "e": {"b": "IB", "p": "IB", "d": "A2", "t": "A2", "ṭ": "A2", "g": "IG", "k": "IG", "q": "IG", "ḫ": "HI TIMES NUN",
+          "l": "EL", "m": "IM", "n": "EN", "r": "IR", "s": "GISH", "z": "GISH", "ṣ": "GISH", "š": "ISH"},
+    "i": {"b": "IB", "p": "IB", "d": "A2", "t": "A2", "ṭ": "A2", "g": "IG", "k": "IG", "q": "IG", "ḫ": "HI TIMES NUN",
+          "l": "IL", "m": "IM", "n": "IN", "r": "IR", "s": "GISH", "z": "GISH", "ṣ": "GISH", "š": "ISH"},
+    "u": {"b": "UB", "p": "UB", "d": "UD", "t": "UD", "ṭ": "UD", "g": "PIRIG TIMES UD", "k": "PIRIG TIMES UD",
+          "q": "PIRIG TIMES UD", "ḫ": "HI TIMES NUN", "l": "U GUD", "m": "UM", "n": "UN", "r": "UR", "š": "USH"},
+}
+_AKK_PLAIN = {"ā": "a", "â": "a", "ē": "e", "ê": "e", "ī": "i", "î": "i", "ū": "u", "û": "u"}
+
+
+def akkadian_syllables(word: str) -> list[str]:
+    """Split a normalized Akkadian word into the syllables a scribe would write: šarrum -> ša-ar-ru-um."""
+    w = "".join(_AKK_PLAIN.get(c, c) for c in unicodedata.normalize("NFC", word.lower()) if c.isalpha() or c in "ʾ")
+    vowels = set("aeiu")
+    segments: list[str] = []  # phonemes
+    for c in w:
+        segments.append(c)
+    out: list[str] = []
+    i = 0
+    n = len(segments)
+    while i < n:
+        onset = ""
+        if segments[i] not in vowels:
+            onset = segments[i]
+            i += 1
+        if i >= n:
+            out.append(onset)  # stray final consonant (not expected in Akkadian words)
+            break
+        vowel = segments[i]
+        i += 1
+        # a consonant closes the syllable if it is followed by another consonant or ends the word
+        coda = ""
+        if i < n and segments[i] not in vowels and (i + 1 >= n or segments[i + 1] not in vowels):
+            coda = segments[i]
+            i += 1
+        if onset:
+            out.append(onset + vowel)
+        if coda:
+            out.append(vowel + coda)
+        if not onset and not coda:
+            out.append(vowel)
+        elif not onset and coda:
+            pass
+    return [s for s in out if s and s != "ʾ"]
+
+
+def akkadian_sign(syllable: str) -> str:
+    if len(syllable) == 1 and syllable in AKK_VOWEL_SIGNS:
+        return AKK_VOWEL_SIGNS[syllable]
+    if syllable[-1] in "aeiu" and len(syllable) == 2:
+        return _AKK_CV[syllable[0]][syllable[1]]
+    if syllable[0] in "aeiu" and len(syllable) == 2:
+        return _AKK_VC[syllable[0]][syllable[1]]
+    raise KeyError(syllable)
+
+
+def akkadian_cuneiform(word: str) -> tuple[str, str]:
+    """(cuneiform glyphs, sign-by-sign reading) for one Akkadian word."""
+    syllables = akkadian_syllables(word)
+    return "".join(cuneiform_sign(akkadian_sign(s)) for s in syllables), "-".join(syllables)

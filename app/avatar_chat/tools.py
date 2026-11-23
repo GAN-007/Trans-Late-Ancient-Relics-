@@ -98,7 +98,8 @@ def chat_tools() -> list[dict[str, Any]]:
 # ------------------------------------------------------------------ implementations
 def _ladder_rows(result: dict[str, Any], targets: list[str]) -> list[dict[str, Any]]:
     return [{"language": lang, "name": REALIZERS[lang].name if lang in REALIZERS else r.get("language_name", lang),
-             "text": r["text"], "scripts": r["scripts"], "status": r["status"], "confidence": r["confidence"], "refusal": r.get("refusal")}
+             "text": r["text"], "scripts": r["scripts"], "status": r["status"], "confidence": r["confidence"], "refusal": r.get("refusal"),
+             "pronunciation": r.get("pronunciation")}
             for lang in targets if (r := result["results"].get(lang))]
 
 
@@ -114,7 +115,8 @@ async def translate_ancient(ctx: Any, text: str, source_language: str = "english
     card = {"type": "ladder", "source": text, "source_language": result["source_language"], "rows": rows}
     if result.get("warning"):
         card["warning"] = result["warning"]
-    slim = {r["language"]: {"text": r["text"], "status": r["status"], "refusal": r["refusal"]} for r in rows}
+    slim = {r["language"]: {"text": r["text"], "say": (r.get("pronunciation") or {}).get("say", ""), "status": r["status"], "refusal": r["refusal"]}
+            for r in rows}
     output: dict[str, Any] = {"ok": True, "meaning": result["meaning"], "translations": slim, "complete": result.get("complete", True),
                               "note": "Composed sentences are built by grammar rules, not quoted from ancient texts. A card with every script is already on screen."}
     if result.get("warning"):

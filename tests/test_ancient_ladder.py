@@ -244,7 +244,7 @@ def test_api_endpoints():
 
 def _check_api(client):
     langs = client.get("/api/ancient/languages").json()
-    assert len(langs["languages"]) == 12 and langs["coverage"]["concepts"]["verbs"] == len(verbs())
+    assert len(langs["languages"]) == len(LADDER_ORDER) == 13 and langs["coverage"]["concepts"]["verbs"] == len(verbs())
     response = client.post("/api/ancient/translate", json={"text": "ተወከልኩ፡በአማን።", "source": "geez", "targets": ["english", "sw"]})
     assert response.status_code == 200
     body = response.json()
