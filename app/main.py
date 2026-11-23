@@ -18,6 +18,8 @@ from .active_learning import (
     submit_vision_correction,
 )
 from .ai import ai_status
+from .avatar_chat.personas import PERSONAS as AVATAR_PERSONAS
+from .avatar_chat.session import avatar_socket, avatar_status
 from .ancient.engine import LadderError, concept_table, coverage as ladder_coverage, languages as ladder_languages, translate as ladder_translate
 from .auth import (
     authenticate,
@@ -111,6 +113,12 @@ async def lifespan(app: FastAPI):
         task = asyncio.create_task(background_loop(stop_event))
     app.state.knowledge_stop = stop_event
     app.state.knowledge_task = task
+    warm = None
+    if env_bool("ESHB_WARMUP", True):
+        # Build translation and reading indexes off the request path so the first chat answers instantly.
+        from .avatar_chat.reading import warm_up
+        warm = asyncio.create_task(asyncio.to_thread(warm_up))
+    app.state.warmup_task = warm
     try:
         yield
     finally:
@@ -184,6 +192,7 @@ def capabilities(request: Request):
         "streaming": streaming_capabilities(),
         "universal_translation": universal_capabilities(),
         "ancient_ladder": {"languages": [lang["id"] for lang in ladder_languages()], **ladder_coverage()},
+        "avatar_chat": avatar_status(),
         "epigraphy": epigraphy_capabilities(),
         "active_learning": collection_policy(),
         "knowledge_loop": knowledge_loop_status(),
@@ -208,6 +217,7 @@ def capabilities(request: Request):
             "human_reviewed_learning_loop": True,
             "opt_in_active_learning": True,
             "ancient_language_ladder": True,
+            "live_avatar_chat": True,
         },
     }
 
@@ -445,6 +455,21 @@ async def vision_analyze(req: VisionRequest, request: Request):
 @app.websocket("/ws/vision")
 async def ws_vision(websocket: WebSocket):
     await vision_socket(websocket)
+
+
+@app.get("/api/avatar/status")
+def avatar_chat_status():
+    return avatar_status()
+
+
+@app.get("/api/avatar/personas")
+def avatar_personas():
+    return {"personas": [p.public() for p in AVATAR_PERSONAS.values()]}
+
+
+@app.websocket("/ws/avatar")
+async def ws_avatar(websocket: WebSocket):
+    await avatar_socket(websocket)
 
 
 @app.websocket("/ws/conversation")

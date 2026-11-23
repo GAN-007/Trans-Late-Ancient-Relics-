@@ -52,6 +52,10 @@ POST /api/ancient/translate  {"text": "Mimi ni mtumishi", "source": "swahili", "
 
 See [`docs/ANCIENT_LANGUAGE_LADDER.md`](docs/ANCIENT_LANGUAGE_LADDER.md).
 
+## Live Avatar Chat
+
+Talk by voice or text with an animated guide (Nefer, Amani or Theo) in the **Live Chat** tab. Show it a wall of hieroglyphs through your camera, a photo, or pasted cuneiform or Ge'ez, and it reads it to you like a teacher: the direction, the whole meaning in English or Kiswahili, then word by word with each sign's sound and job, highlighting as it goes. Say "quiz me" and it teaches you to read it yourself. It translates into the ancient languages with verified cards, lip-syncs, and can be interrupted mid-sentence. The architecture is ported from [OpenAvatarChat](https://github.com/HumanAIGC-Engineering/OpenAvatarChat) (Apache-2.0): speech recognition and voice run in the browser, and the server streams replies over `/ws/avatar`. It works offline from the built-in tools, and open conversation uses `OPENAI_API_KEY` or any OpenAI-compatible endpoint. See [`docs/LIVE_AVATAR_CHAT.md`](docs/LIVE_AVATAR_CHAT.md).
+
 ## Accuracy boundary
 
 This project does not create authentic Egyptian by mapping English letters to birds or snakes.
@@ -351,6 +355,9 @@ POST /api/translate/contextual
 GET  /api/ancient/languages
 POST /api/ancient/translate
 GET  /api/ancient/concepts/{concept}
+GET  /api/avatar/status
+GET  /api/avatar/personas
+WS   /ws/avatar
 POST /api/egyptian/analyze-signs
 POST /api/egyptian/analyze-transliteration
 GET  /api/egyptian/epigraphy-capabilities
@@ -370,6 +377,7 @@ Existing ESHB, IPA, MdC, dictionary, lesson, auth, history, feedback and knowled
 
 ## Documentation
 
+- [`docs/LIVE_AVATAR_CHAT.md`](docs/LIVE_AVATAR_CHAT.md) — live talking-avatar chat: pipeline, protocol, personas, configuration
 - [`docs/ANCIENT_LANGUAGE_LADDER.md`](docs/ANCIENT_LANGUAGE_LADDER.md) — any-to-any ancient language ladder: languages, grammar, honesty rules, API
 - [`docs/V3_GAP_AUDIT.md`](docs/V3_GAP_AUDIT.md) — complete code/logic/data/product gap audit and v3 decisions
 - [`docs/V3_RESEARCH_MODEL_GOVERNANCE.md`](docs/V3_RESEARCH_MODEL_GOVERNANCE.md) — correction, dataset, training and model-promotion rules

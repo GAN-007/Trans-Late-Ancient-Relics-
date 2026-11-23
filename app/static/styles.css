@@ -16,7 +16,7 @@
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55;padding-bottom:env(safe-area-inset-bottom)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif,"Noto Sans Egyptian Hieroglyphs","Noto Sans Cuneiform","Noto Sans Ethiopic","Noto Sans Old Italic","Noto Sans Old North Arabian";line-height:1.55;padding-bottom:env(safe-area-inset-bottom)}
 button,input,textarea,select{font:inherit}
 button{min-height:44px;border:0;border-radius:12px;padding:10px 16px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer;touch-action:manipulation}
 button:hover{filter:brightness(.95)}
@@ -73,3 +73,103 @@ dialog{width:min(900px,calc(100vw - 24px));border:1px solid var(--line);border-r
 .ladder-card ul{margin:6px 0 0;padding-left:20px}
 @media (max-width:720px){.ladder-results{grid-template-columns:1fr}.ladder-glyphs{font-size:1.45rem}}
 .stack-gap{margin-top:24px}
+
+/* ---------------- Live avatar chat ---------------- */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.avatar-layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px;align-items:start}
+.avatar-head-row{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.avatar-head-row h2{margin-bottom:0}
+.avatar-persona-label{margin:0;min-width:220px;flex:0 1 280px}
+.avatar-stage{--avatar-skin:#a8693f;--avatar-hair:#1d1a1a;--avatar-accent:#c79a2c;--avatar-eyes:#2b1b10;position:relative;margin-top:16px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#f7ecd6 0%,#ead9b8 100%);border:1px solid var(--line);aspect-ratio:400/440;max-height:62vh;display:flex;justify-content:center}
+.avatar-stage svg{height:100%;width:auto;max-width:100%;display:block}
+#avatarShoulders{fill:var(--avatar-accent)}#avatarCollar{fill:#f4e6c4;stroke:var(--avatar-accent);stroke-width:3}
+#avatarNeck,#avatarFace,.avatar-ear{fill:var(--avatar-skin)}
+#avatarHairBack,#avatarHairFront{fill:var(--avatar-hair)}
+#avatarHeadwear{fill:var(--avatar-accent);opacity:.92}
+#avatarBrows path{fill:none;stroke:var(--avatar-hair);stroke-width:5;stroke-linecap:round}
+.avatar-eye-white{fill:#fbf6ee}.avatar-iris{fill:var(--avatar-eyes)}.avatar-glint{fill:#fff;opacity:.85}
+.avatar-lid{fill:none;stroke:rgba(0,0,0,.28);stroke-width:2;stroke-linecap:round}
+#avatarNose{fill:none;stroke:rgba(0,0,0,.22);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+#avatarMouthInner{fill:#3a1414}#avatarTeeth{fill:#fbf7f0}#avatarTongue{fill:#c25a5a}
+#avatarLipUpper,#avatarLipLower{fill:#8e3d32}
+.avatar-cheek{fill:#d9776a;opacity:.18}
+.avatar-stage[data-state="listening"]{box-shadow:inset 0 0 0 3px var(--avatar-accent)}
+.avatar-stage[data-state="speaking"] #avatarShoulders{filter:brightness(1.05)}
+.avatar-state-badge{position:absolute;top:12px;left:12px;background:rgba(33,26,18,.78);color:#fff;font-weight:750;font-size:.86rem;padding:6px 12px;border-radius:999px}
+.avatar-stage[data-state="thinking"] .avatar-state-badge::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:avatarDots 1.2s steps(4) infinite}
+@keyframes avatarDots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.avatar-subtitle{position:absolute;left:12px;right:12px;bottom:12px;color:#fff;background:rgba(20,15,10,.72);border-radius:12px;padding:8px 12px;font-weight:650;text-align:center;line-height:1.4;overflow-wrap:anywhere}
+.avatar-subtitle:empty{display:none}
+.avatar-controls{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.avatar-mic{flex:1 1 180px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:1rem}
+.avatar-mic[aria-pressed="true"]{background:#9b2c2c}
+.avatar-options{display:flex;gap:18px;flex-wrap:wrap}
+.avatar-chat-card{display:flex;flex-direction:column;min-height:560px;max-height:calc(100vh - 110px)}
+.avatar-records{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:6px 2px 12px;min-height:260px}
+.avatar-bubble{max-width:88%;padding:10px 14px;border-radius:16px;line-height:1.5;overflow-wrap:anywhere}
+.avatar-bubble.human{align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:6px}
+.avatar-bubble.avatar{align-self:flex-start;background:var(--surface-2);border-bottom-left-radius:6px}
+.avatar-bubble.interrupted .avatar-bubble-text::after{content:" — interrupted";color:var(--muted);font-style:italic}
+.avatar-bubble-who{display:block;font-size:.74rem;font-weight:800;opacity:.7;margin-bottom:2px}
+.avatar-card{align-self:stretch;border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.avatar-card-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;border-top:1px solid var(--line);padding-top:6px}
+.avatar-card-lang{font-weight:800;font-size:.85rem;min-width:9em}
+.avatar-card-text{font-weight:650}
+.avatar-card-script{font-size:1.25rem;font-family:"Noto Sans Cuneiform","Noto Sans Egyptian Hieroglyphs","Noto Sans Ethiopic","Noto Sans Old Italic","Noto Sans Old North Arabian","Segoe UI Historic",serif}
+.avatar-card .pill{margin-left:auto;font-size:.72rem}
+.avatar-notice{align-self:center;font-size:.82rem;color:var(--muted);background:rgba(255,255,255,.6);border:1px dashed var(--line);border-radius:10px;padding:6px 10px;max-width:92%}
+.avatar-form{display:flex;gap:10px;align-items:flex-end;margin-top:8px}
+.avatar-form textarea{min-height:52px;flex:1}
+@media (max-width:900px){.avatar-layout{grid-template-columns:1fr}.avatar-stage{max-height:52vh}.avatar-chat-card{max-height:none;min-height:420px}}
+@media (prefers-reduced-motion:reduce){.avatar-stage[data-state="thinking"] .avatar-state-badge::after{animation:none;content:"…"}}
+
+/* live chat: seeing and reading */
+.avatar-pickers{display:flex;gap:10px;flex-wrap:wrap;flex:1 1 320px;justify-content:flex-end}
+.avatar-pickers label{margin:0;flex:1 1 150px;max-width:260px}
+.avatar-camera{position:absolute;right:12px;top:12px;width:34%;max-width:220px;aspect-ratio:4/3;border-radius:12px;overflow:hidden;border:2px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.25);background:#111}
+.avatar-camera video{width:100%;height:100%;object-fit:cover;display:block}
+.avatar-live-dot{position:absolute;left:8px;top:8px;background:#c0392b;color:#fff;font-size:.68rem;font-weight:800;letter-spacing:.08em;padding:2px 7px;border-radius:999px}
+.avatar-see-controls{margin-top:8px}
+.avatar-see-controls button{flex:1 1 140px}
+#avatarCameraBtn[aria-pressed="true"],#avatarLiveBtn[aria-pressed="true"]{background:var(--ink);color:#fff}
+.avatar-attach{display:flex;align-items:center;justify-content:center;min-width:48px;min-height:52px;border:1px solid var(--line);border-radius:12px;cursor:pointer;font-size:1.3rem;margin:0;background:#fff}
+.avatar-chat-card.dropping{outline:3px dashed var(--avatar-accent,#c79a2c);outline-offset:-8px}
+.avatar-bubble-image{display:block;max-width:220px;max-height:180px;border-radius:10px;margin:4px 0 6px;object-fit:cover}
+.avatar-reading{align-self:stretch;background:#fffdf7;border:1px solid var(--line);border-left:4px solid var(--avatar-accent,#c79a2c);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.avatar-reading:not(.current){opacity:.8}
+.avatar-reading-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.avatar-reading-translation{font-size:1.08rem;font-weight:700;line-height:1.45}
+.avatar-reading-words{display:flex;flex-wrap:wrap;gap:8px}
+.avatar-word{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:92px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:500;text-align:center;min-height:auto;transition:transform .15s ease,box-shadow .15s ease,background .2s ease}
+.avatar-word:hover{border-color:var(--avatar-accent,#c79a2c)}
+.avatar-word.active{background:#fff4d6;border-color:var(--avatar-accent,#c79a2c);box-shadow:0 0 0 3px rgba(199,154,44,.35);transform:translateY(-2px)}
+.avatar-word.right{background:#dcefe3;border-color:var(--success)}
+.avatar-word.wrong{background:#f6dede;border-color:var(--danger)}
+.avatar-word.status-model_reading,.avatar-word.status-disputed{border-style:dashed}
+.avatar-word.status-sign_only{opacity:.75}
+.avatar-word-glyphs{font-size:1.9rem;line-height:1.3;font-family:"Noto Sans Egyptian Hieroglyphs","Noto Sans Cuneiform","Noto Sans Ethiopic","Abyssinica SIL","Noto Sans Old Italic","Noto Sans Old North Arabian","Noto Naskh Arabic","Segoe UI Historic",serif}
+.avatar-word-translit{font-weight:800;font-size:.92rem}
+.avatar-word-say{font-style:italic;font-size:.85rem;color:var(--muted)}
+.avatar-word-meaning{font-size:.85rem}
+.avatar-reading-signs summary{cursor:pointer;font-weight:700;font-size:.9rem}
+.avatar-sign-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.avatar-sign{display:inline-flex;flex-direction:column;align-items:center;border:1px solid var(--line);border-radius:10px;padding:4px 8px;background:#fff;max-width:150px;text-align:center}
+.avatar-sign b{font-size:1.5rem;font-weight:400;font-family:"Noto Sans Egyptian Hieroglyphs","Noto Sans Cuneiform","Noto Sans Ethiopic","Noto Sans Old Italic","Noto Sans Old North Arabian","Segoe UI Historic",serif}
+.avatar-sign small{font-size:.72rem;color:var(--muted)}
+.avatar-sign em{font-size:.7rem;font-style:normal;line-height:1.2}
+.avatar-reading-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:900px){.avatar-camera{width:38%}.avatar-pickers{justify-content:flex-start}.avatar-pickers label{max-width:none}}
+@media (prefers-reduced-motion:reduce){.avatar-word{transition:none}.avatar-word.active{transform:none}}
+button,input,textarea,select{font-family:inherit}
+/* word board: the teacher holds up the word being read */
+.avatar-board{position:absolute;left:12px;top:52px;max-width:55%;background:rgba(255,253,247,.96);border:2px solid var(--avatar-accent,#c79a2c);border-radius:14px;padding:10px 14px;box-shadow:0 8px 22px rgba(0,0,0,.18);display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.avatar-board[hidden]{display:none}
+.avatar-board-glyphs{font-size:clamp(2rem,5vw,3.2rem);line-height:1.2;overflow-wrap:anywhere}
+.avatar-board-translit{font-weight:800}
+.avatar-board-hint{font-size:.8rem;color:var(--muted)}
+.avatar-board.right{border-color:var(--success);background:#eaf6ee}
+.avatar-board.wrong{border-color:var(--danger);background:#fbeaea}
+.avatar-reading.quiz .avatar-word:not(.answered) .avatar-word-translit,
+.avatar-reading.quiz .avatar-word:not(.answered) .avatar-word-say,
+.avatar-reading.quiz .avatar-word:not(.answered) .avatar-word-meaning{visibility:hidden}
+.avatar-reading.quiz .avatar-reading-signs{display:none}
