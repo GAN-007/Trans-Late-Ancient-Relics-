@@ -83,6 +83,8 @@ Personas: **Nefer** (scribe), **Amani** (Kenyan teacher) and **Theo** (historica
 - `openai`: a neural voice (`gpt-4o-mini-tts` by default). Each sentence carries spoken instructions from the guide's personality and the moment: delighted when you get a word right, gentle after a mistake, slow and clear while teaching a word.
 - `azure`: Azure neural voices through SSML, including Kenyan Swahili (`sw-KE-ZuriNeural`) and voices for every listed language.
 
+Ancient words are spoken from their pronunciation respelling (*lugal-e* is said "lu-ga-le", *šarrum* "shar-rum"), so neither the browser voice nor a neural voice reads sign numbers or diacritics; the card keeps the written form.
+
 With a server voice, each sentence's audio is generated while the previous one plays, kept in order, and cached. The browser decodes it, measures the real loudness of the voice many times a second and opens the mouth only as far as the sound does, while the mouth shapes are stretched to the exact length of the audio. The lips stop when the voice pauses and close when it ends. If one sentence fails to synthesize, that sentence falls back to the browser voice.
 
 The face shows the same emotion as the voice (happy, encouraging, teaching, curious, warm) through brows, eyes and smile, nods while listening, and looks toward the camera when you show it something.

@@ -9,6 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
+from app.ancient.engine import LADDER_ORDER
 from app.avatar_chat import brain
 from app.avatar_chat.brain import BrainContext, compile_prompt, llm_status, run_tools, stream_llm, think
 from app.avatar_chat.personas import PERSONAS, get_persona
@@ -69,7 +70,7 @@ def test_tools_translate_meaning_and_languages():
     [tool] = run_tools("What does lugal mean?", nefer)
     assert tool.reply == 'lugal is Archaic Sumerian for "king".'
     [tool] = run_tools("translate water into every language", nefer)
-    assert len(tool.card["rows"]) == 11 and "card" in tool.reply
+    assert len(tool.card["rows"]) == len(LADDER_ORDER) - 1 and "card" in tool.reply
     [tool] = run_tools("which languages do you know?", nefer)
     assert "Proto-Semitic" in tool.reply
     [tool] = run_tools("What does spaceship mean?", nefer)
@@ -79,7 +80,8 @@ def test_tools_translate_meaning_and_languages():
 def test_swahili_persona_answers_in_swahili():
     amani = get_persona("amani")
     [tool] = run_tools("Tafsiri mfalme alipenda mama kwa Kilatini", amani)
-    assert tool.reply.startswith("Kwa Kilatini cha kale, ni rex matrem amauet.")
+    assert tool.reply.startswith("Kwa Kilatini cha kale, tunasema reks mat-rem a-ma-wet.")  # spoken as it sounds
+    assert tool.card["rows"][0]["text"] == "rex matrem amauet"  # written form stays on the card
     [tool] = run_tools("Maana ya lugal ni nini?", amani)
     assert "mfalme" in tool.reply
 
@@ -103,7 +105,7 @@ def test_think_offline_streams_card_then_words():
     events = _collect(think(ctx, "What is water in Ge'ez?"))
     assert events[0]["type"] == "card"
     text = "".join(e["text"] for e in events if e["type"] == "delta")
-    assert text == "In Ge'ez (Classical Ethiopic), it is māy."
+    assert text == "In Ge'ez (Classical Ethiopic), you say may."
 
 
 def test_prompt_compiler_layers():
@@ -229,7 +231,7 @@ def test_session_greeting_and_turn(client):
         card = next(p for n, p in events if n == "AvatarCard")["card"]
         assert card["rows"][0]["text"] == "lugal-e e2 gal mu-un-du3"
         speech = [p for n, p in events if n == "AvatarSpeech"]
-        assert speech[0]["text"] == "In Archaic Sumerian, it is lugal-e e2 gal mu-un-du3."
+        assert speech[0]["text"] == "In Archaic Sumerian, you say lu-ga-le e gal mu-un-du."
         assert speech[-1]["end_of_speech"] is True
         increments = "".join(p["text"] for n, p in events if n == "EchoAvatarText")
         assert increments.startswith("In Archaic Sumerian") and names.index("AvatarCard") < names.index("EchoAvatarText")

@@ -8,6 +8,7 @@ Any-to-any translation between English, Swahili and the oldest recoverable stage
 |---|---|---|---|---|
 | `archaic_hieroglyphic` | Archaic / proto-hieroglyphic Egyptian | Abydos tomb U-j labels, Naqada III, c. 3250 BCE | attested words; **no sentences** | hieroglyphs |
 | `archaic_sumerian` | Archaic Sumerian | Abu Salabikh / Fara tablets, c. 2600-2500 BCE | attested words, composed sentences | cuneiform |
+| `old_akkadian` | Old Akkadian | Sargonic royal inscriptions, c. 2350-2150 BCE (oldest written Semitic) | attested words, composed sentences | syllabic cuneiform, sign-by-sign transliteration |
 | `old_egyptian` | Old Egyptian | Old Kingdom, c. 2686-2160 BCE (keeps *z* ≠ *s*) | attested words, composed sentences | hieroglyphs |
 | `middle_egyptian` | Middle Egyptian | c. 2055-1650 BCE (applies *z* > *s*) | attested words, composed sentences | hieroglyphs |
 | `old_latin` | Old Latin | c. 600-150 BCE (Lapis Niger, Duenos vase) | attested words, composed sentences | archaic capitals, Old Italic letters |
@@ -37,6 +38,7 @@ any input text ──► parser ──► meaning frame ──► realizer ─�
 | `app/ancient/engine.py` | Language registry, aliases, `translate()` and `concept_table()` |
 | `app/ancient/bridge.py` | Modern languages (French, German, Russian, Chinese, Hebrew, …) to and from the ladder through English with the universal machine translator |
 | `app/ancient/quiz.py` | Quizzes for every rung: word meaning, word form and whole sentences |
+| `app/ancient/phonetics.py` | IPA and a learner respelling (*say it*) for every rung, with how certain each pronunciation is |
 
 Sentence types: statements (subject, verb, object), **negatives**, **yes/no questions**, and **nominal sentences** with a noun or adjective predicate ("I am a servant", "The king is a servant", "The sun is great"), each in past and present for all eight persons.
 
@@ -48,10 +50,28 @@ Grammar each realizer applies:
 - **Old Arabic**: VSO, case endings and nunation, definite article with sun-letter assimilation, perfect and imperfect conjugation, prepositions *ʿalā*, *bi-*, *ʾilā*; *mā* + perfect, *lā* + imperfect, *hal* / *ʾa-* questions, nominal sentences (*aš-šamsu kabīratun*) and *laysa* with an accusative predicate.
 - **Ge'ez**: VSO, *-ku* perfect, accusative *-a*, *ba-* clitic; negative *ʾi-*, question enclitic *-nu*, copular *wəʾətu*.
 - **Old Amharic**: SOV, definite *-u/-wa*, accusative *-n*, copula *nəññ/näw*; negative perfect *ʾal-…-m*, negative imperfect *ʾay-…-m*, negative copula *ʾaydälläm*.
+- **Old Akkadian**: SOV, cases with mimation (*-um/-am/-im*), uncontracted Old Akkadian vowels (*rabium*), 3rd feminine *ta-* (*tāmur* "she saw"), preterite for the past and durative for the present (full eight-person paradigms written out for every verb), ventive for "come" (*illikam*), *ana/ina* + genitive, adjective predicates as statives (*šarrum rabi* "the king is great", *damqāku* "I am good"), verbless noun sentences (*anāku wardum*), negative *ula*, plural nouns *mû* "water" and *šamû* "heavens" with plural agreement. Cuneiform is spelled with standard syllable signs (CV, VC; *ša-ar-ru-um*); typed input may be normalized (*šarrum*), plain (*sarrum*), sign by sign (*ša-ar-ru-um*) or cuneiform. Akkadian is a separate rung: the Sumerian data and grammar are unchanged, and pasted cuneiform is tried as Sumerian first.
 - **Swahili**: noun-class agreement, negative concords (*hakuona*, *haoni*, *sikwenda*), copula *ni/si*, *Je* questions.
 - **Proto-Semitic**: reconstructed case vowels and suffix conjugation (*-ku*), prefixed imperfect, negative *\*lā*.
 
 Where a stage has no secure form, it refuses with a reason instead of guessing: negated nominal sentences in Sumerian, Ge'ez, Egyptian and Proto-Semitic; plural adjective agreement where the lexicon has no plural forms; anything beyond roots in Proto-World; anything beyond labels in archaic hieroglyphic.
+
+## Pronunciation
+
+Every result, every word token and every quiz question carries `pronunciation`: an IPA reading, a respelling to read aloud (stressed syllable in capitals) and a note on how certain it is. The *Hear it* buttons and the live guide's voice read the respelling, never raw transliteration with sign numbers.
+
+| Rung | Basis | Example |
+|---|---|---|
+| Old Akkadian | Reconstructed (comparative Semitic, cuneiform spellings); stress on the last long or closed syllable | *šarrum* SHAR-rum /ˈʃar.rum/, *damqāku* dam-KAA-ku |
+| Archaic Sumerian | Approximate (via Akkadian scribes); stress unknown, so not marked | *niĝ-gi-na* ning-gi-na /niŋ.gi.na/ |
+| Egyptian | Egyptological classroom convention; IPA shows consonants only | *ꜥnḫ nfr* ankh nefer |
+| Old Latin | Restored (c is k, u before a vowel is w); stress not marked because the archaic spelling hides vowel length | *uidit* wi-dit |
+| Old Arabic | Classical Arabic; elided article joins the previous word | *tawakkaltu ʿalā l-ḥaqqi* ta-wak-KAL-tu ’A-laal HAK-ki |
+| Ge'ez | Traditional church pronunciation (ejective ṣ ṭ q) | *ʾigabra* ’ee-geb-re |
+| Old Amharic | Amharic pronunciation of the conservative spelling | *ʾaydälläm* ’ay-del-lem |
+| Proto-Semitic | Reconstructed | *\*malku* mal-ku |
+| Swahili | Standard; penultimate stress, syllabic m | *Mfalme hakuona mto* m-FAL-me ha-koo-O-na M-to |
+| Proto-World | Hypothetical roots, no pronunciation claimed | |
 
 ## Modern languages
 
@@ -126,6 +146,7 @@ Example: *"The truth, I have put my trust in"*
 
 - The vocabulary is a curated core, not a full dictionary. Add a concept by adding one entry to `lexicon.json`; the parsers pick it up automatically, and `tests/test_ancient_ladder.py` checks that every new form reads back.
 - Sentences cover one subject, verb and object (with one adjective), negation, yes/no questions and nominal sentences. Second objects, possession ("of"), plural nouns, relative clauses, wh-questions and the future are not modelled yet; they are reported as not translated (the future falls back to the present with a note).
-- Not yet ladder stages: Akkadian (Old Babylonian), Biblical/Paleo-Hebrew, Classical Latin and Classical Arabic as separate rungs. Modern Hebrew, Classical Latin and modern Arabic are reachable through the machine-translation bridge.
+- Not yet ladder stages: Biblical/Paleo-Hebrew, Ugaritic, Phoenician, Hittite, Mycenaean/Homeric Greek, Coptic, Old Babylonian (as distinct from Old Akkadian), Classical Latin and Classical Arabic as separate rungs.
+- Akkadian cuneiform uses a standard syllabic spelling; ancient scribes often chose other signs or Sumerian logograms (LUGAL for *šarrum*). Modern Hebrew, Classical Latin and modern Arabic are reachable through the machine-translation bridge.
 - Earliest Sumerian and Old Amharic left much grammar unwritten; the fuller later spellings are used and noted per result.
 - Display of native scripts depends on installed fonts (Noto Sans Cuneiform, Egyptian Hieroglyphs, Ethiopic, Old Italic and Old North Arabian cover all of them).

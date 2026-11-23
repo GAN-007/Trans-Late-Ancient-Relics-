@@ -26,6 +26,7 @@ from ..ancient.engine import LADDER_ORDER, LadderError, concept_table, translate
 from ..ancient.grammar import REALIZERS
 from ..ancient.lexicon import english_index
 from ..ancient.parsing import parse
+from ..ancient.phonetics import speakable
 from . import reading as reading_mod
 from . import tutor
 from .personas import FULL_OFFLINE_LANGUAGES, LANGUAGES, Persona
@@ -33,6 +34,7 @@ from .personas import FULL_OFFLINE_LANGUAGES, LANGUAGES, Persona
 # ------------------------------------------------------------------ language names
 LANGUAGE_WORDS: dict[str, str] = {
     "sumerian": "archaic_sumerian", "kisumeri": "archaic_sumerian", "cuneiform": "archaic_sumerian",
+    "akkadian": "old_akkadian", "old akkadian": "old_akkadian", "babylonian": "old_akkadian", "kiakadi": "old_akkadian",
     "egyptian": "old_egyptian", "old egyptian": "old_egyptian", "kimisri": "old_egyptian", "hieroglyphs": "old_egyptian",
     "hieroglyphics": "old_egyptian", "hieroglyphic": "old_egyptian", "middle egyptian": "middle_egyptian",
     "latin": "old_latin", "old latin": "old_latin", "kilatini": "old_latin",
@@ -66,7 +68,7 @@ HELP = re.compile(r"\b(?:help|what\s+can\s+you\s+do|unaweza\s+kufanya\s+nini|nis
 
 LANG_LABEL = {lang: REALIZERS[lang].name for lang in REALIZERS}
 LANG_LABEL_SW = {
-    "english": "Kiingereza", "swahili": "Kiswahili", "archaic_sumerian": "Kisumeri cha kale",
+    "english": "Kiingereza", "swahili": "Kiswahili", "archaic_sumerian": "Kisumeri cha kale", "old_akkadian": "Kiakadi cha kale",
     "old_latin": "Kilatini cha kale", "old_arabic": "Kiarabu cha kale", "geez": "Ge'ez",
     "old_amharic": "Kiamhari cha kale", "proto_semitic": "Proto-Semitic", "proto_world": "Proto-World",
     "archaic_hieroglyphic": "Hieroglifu za awali", "old_egyptian": "Kimisri cha kale", "middle_egyptian": "Kimisri cha kati",
@@ -146,7 +148,7 @@ def _card(result: dict[str, Any], targets: list[str]) -> dict[str, Any]:
         **({"warning": result["warning"]} if result.get("warning") else {}),
         "rows": [
             {"language": lang, "name": REALIZERS[lang].name, "text": r["text"], "scripts": r["scripts"],
-             "status": r["status"], "confidence": r["confidence"], "refusal": r.get("refusal")}
+             "status": r["status"], "confidence": r["confidence"], "refusal": r.get("refusal"), "pronunciation": r.get("pronunciation")}
             for lang in targets if (r := result["results"].get(lang))
         ],
     }
@@ -172,7 +174,9 @@ def tool_translate(text: str, target: str, persona: Persona) -> ToolResult | Non
             spoken.append((f"{_label(lang, persona)} haikuandika sentensi kama hii." if sw
                            else f"{_label(lang, persona)} didn't write sentences like this, so there's no honest form."))
             continue
-        spoken.append(f"{'Kwa' if sw else 'In'} {_label(lang, persona)}, {'ni' if sw else 'it is'} {r['text']}.")
+        # the voice reads the respelling (lu-ga-le), never raw transliteration with sign numbers and diacritics
+        said = speakable(lang, r["text"])
+        spoken.append(f"{'Kwa' if sw else 'In'} {_label(lang, persona)}, {'tunasema' if sw else 'you say'} {said}.")
     composed = any(r["status"] in {"composed", "reconstructed_composition"} for r in rows.values())
     if composed:
         spoken.append("Sentensi hizi zimejengwa kwa kanuni za sarufi, si nukuu za maandishi ya kale." if sw
@@ -182,7 +186,8 @@ def tool_translate(text: str, target: str, persona: Persona) -> ToolResult | Non
         spoken.append((f"Sikutafsiri sehemu hii: {', '.join(left)}." if sw else f"I left out {', '.join(left)}, which the grammar can't express yet."))
     if target == "all":
         spoken.append("Nimeweka lugha zote kwenye kadi." if sw else "I've put every language on the card.")
-    facts = {lang: {"text": r["text"], "scripts": r["scripts"], "status": r["status"], "refusal": r.get("refusal")} for lang, r in rows.items()}
+    facts = {lang: {"text": r["text"], "say": (r.get("pronunciation") or {}).get("say", ""), "scripts": r["scripts"], "status": r["status"],
+                    "refusal": r.get("refusal")} for lang, r in rows.items()}
     summary = (f"Verified ladder translation of '{phrase}' (meaning {json.dumps(result['meaning'], ensure_ascii=False)}): "
                f"{json.dumps(facts, ensure_ascii=False)}")
     return ToolResult("translate", {"ok": True, "result": result, "targets": targets}, summary, " ".join(spoken), _card(result, targets))
@@ -306,7 +311,9 @@ Rules:
 - Reply in the learner's chosen language (given below) unless they ask for another; when teaching a language, give its words in that language with pronunciation.
 - When <environment-state> contains verified translations or word facts, use exactly those forms and never invent other ancient forms.
 - If a form is composed, reconstructed or hypothetical, say so briefly. If you do not know, say so.
-- The app shows a card with every script; you do not need to read cuneiform, hieroglyphs or fidel letter by letter."""
+- The app shows a card with every script; you do not need to read cuneiform, hieroglyphs or fidel letter by letter.
+- When you say an ancient word aloud, speak its "say" respelling from the tool result (for example lugal is said loo-gal), so the voice sounds right;
+  when teaching pronunciation, model it slowly, syllable by syllable, then invite the learner to repeat it."""
 
 
 def compile_prompt(ctx: BrainContext, user_text: str, tools: list[ToolResult]) -> tuple[str, list[dict[str, str]]]:

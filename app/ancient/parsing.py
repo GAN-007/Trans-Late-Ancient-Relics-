@@ -483,24 +483,42 @@ def _split_words(text: str) -> list[str]:
 QUESTION_MARKS = "?፧؟"
 
 
+def _akkadian_syllabic(word: str) -> str:
+    """Join a sign-by-sign transliteration into the word: ša-ar-ru-um -> šarrum, a-wi-lu-um -> awilum."""
+    if "-" not in word:
+        return word
+    parts = [re.sub(r"[\d₀-₉]", "", p) for p in word.split("-") if p]
+    out = parts[0] if parts else ""
+    for part in parts[1:]:
+        if out and part and out[-1] in "aeiuāēīūâêîû" and loose_key(out[-1]) == loose_key(part[0]) and len(part) > 1:
+            out += part[1:]  # CV-VC spelling of one closed syllable
+        else:
+            out += part
+    return out
+
+
 def parse_ancient(text: str, lang: str) -> ParseResult:
     exact, loose = form_index(lang)
     stripped = text.strip()
     question = stripped.endswith(tuple(QUESTION_MARKS))
     words = _split_words(stripped.rstrip(QUESTION_MARKS + " ።"))
+    joined = [_akkadian_syllabic(w) for w in words] if lang == "old_akkadian" else words
     matches: list[tuple[str, list[dict[str, Any]]]] = []
     unknown: list[str] = []
     i = 0
     while i < len(words):
         found = None
-        for index, keyer in ((exact, _exact_key), (loose, loose_key)):
-            for n in (3, 2, 1):
-                if i + n > len(words):
-                    continue
-                phrase = " ".join(words[i:i + n])
-                key = keyer(phrase)
-                if key in index:
-                    found = (n, phrase, index[key])
+        for source in ((words, joined) if joined is not words else (words,)):
+            for index, keyer in ((exact, _exact_key), (loose, loose_key)):
+                for n in (3, 2, 1):
+                    if i + n > len(words):
+                        continue
+                    phrase = " ".join(source[i:i + n])
+                    key = keyer(phrase)
+                    if key in index:
+                        found = (n, phrase, index[key])
+                        break
+                if found:
                     break
             if found:
                 break

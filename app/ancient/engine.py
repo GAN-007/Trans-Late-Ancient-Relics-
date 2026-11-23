@@ -16,6 +16,7 @@ ALIASES = {
     "en": "english", "eng": "english",
     "sw": "swahili", "swa": "swahili", "kiswahili": "swahili",
     "sumerian": "archaic_sumerian", "sux": "archaic_sumerian",
+    "akkadian": "old_akkadian", "akk": "old_akkadian", "old akkadian": "old_akkadian", "babylonian": "old_akkadian",
     "latin": "old_latin", "la": "old_latin",
     "arabic": "old_arabic", "ar": "old_arabic",
     "ge'ez": "geez", "gez": "geez", "ethiopic": "geez",
@@ -29,14 +30,14 @@ ALIASES = {
 
 LADDER_ORDER = [
     "english", "swahili", "old_amharic", "geez", "old_arabic", "old_latin",
-    "middle_egyptian", "old_egyptian", "archaic_sumerian", "archaic_hieroglyphic",
+    "middle_egyptian", "old_egyptian", "archaic_sumerian", "old_akkadian", "archaic_hieroglyphic",
     "proto_semitic", "proto_world",
 ]
 
 ACCURACY_POLICY = (
     "Single words carry their attestation status. Sentences are composed by grammar rules from attested "
     "or reconstructed words; they are teaching reconstructions, not quotations from ancient texts. "
-    "Proto-Semitic is reconstructed, Proto-World is a hypothesis most linguists reject, and archaic "
+    "Akkadian cuneiform is shown in a standard syllabic spelling. Proto-Semitic is reconstructed, Proto-World is a hypothesis most linguists reject, and archaic "
     "hieroglyphic writing did not record full sentences."
 )
 
@@ -70,7 +71,7 @@ def languages() -> list[dict[str, Any]]:
 
 
 def coverage() -> dict[str, Any]:
-    codes = {"archaic_sumerian": "sux", "old_latin": "la", "old_arabic": "ar", "geez": "gez", "old_amharic": "am",
+    codes = {"archaic_sumerian": "sux", "old_akkadian": "akk", "old_latin": "la", "old_arabic": "ar", "geez": "gez", "old_amharic": "am",
              "proto_semitic": "sem", "proto_world": "pw", "old_egyptian": "egy"}
     table = {}
     for lang, code in codes.items():

@@ -207,7 +207,7 @@ def cuneiform_words() -> dict[str, dict[str, Any]]:
     return index
 
 
-TOKEN_LANGS = {"hieroglyphic": ["old_egyptian", "middle_egyptian"], "cuneiform": ["archaic_sumerian"],
+TOKEN_LANGS = {"hieroglyphic": ["old_egyptian", "middle_egyptian"], "cuneiform": ["archaic_sumerian", "old_akkadian"],
                "ethiopic": ["geez", "old_amharic"], "old_italic": ["old_latin"], "old_north_arabian": ["old_arabic"], "arabic": ["old_arabic"]}
 
 
@@ -437,7 +437,7 @@ def read_cuneiform(text: str, language: str) -> dict[str, Any]:
                   "values": [cuneiform_reading(c)], "role": "logosyllable", "role_label": ROLE_LABELS[lang]["logosyllable"]} for c in group]
         if match:
             segments.append({"original": "".join(group), "signs": signs, "transliteration": match["transliteration"],
-                             "pronunciation": re.sub(r"\d", "", match["transliteration"]).replace("ĝ", "ng").replace("š", "sh"),
+                             "pronunciation": _pronounce(match["transliteration"], "archaic_sumerian"),
                              "meaning": {"english": match["english"], "swahili": match["swahili"]},
                              "source": match["source"], "status": "confirmed", "confidence": match["confidence"]})
             i += length
@@ -451,7 +451,7 @@ def read_cuneiform(text: str, language: str) -> dict[str, Any]:
                 i += 1
                 continue
             segments.append({"original": group[0], "signs": signs, "transliteration": reading,
-                             "pronunciation": re.sub(r"\d", "", reading).replace("š", "sh"),
+                             "pronunciation": _pronounce(reading, "archaic_sumerian"),
                              "meaning": {"english": "", "swahili": ""}, "source": "Unicode sign name", "status": "sign_only", "confidence": "low"})
             i += 1
     return {"script": "cuneiform", "language": "archaic_sumerian", "segments": segments, "direction": "left_to_right"}
@@ -542,7 +542,7 @@ def read_alphabetic(text: str, script: str, language: str) -> dict[str, Any]:
         else:
             translit = "".join(l["value"].split(" ")[0].lstrip("-") for l in letters)
         gloss = _frame_gloss(frame) if frame else {"english": "", "swahili": ""}
-        segments.append({"original": word, "signs": letters, "transliteration": translit, "pronunciation": translit.replace("ə", "").replace("ʾ", "").replace("ʿ", "") or translit,
+        segments.append({"original": word, "signs": letters, "transliteration": translit, "pronunciation": _pronounce(translit, found_lang or detected_lang) if translit else "",
                          "meaning": gloss, "source": "ancient ladder lexicon" if frame else "Unicode letter names",
                          "status": "confirmed" if frame else "sign_only", "confidence": "high" if frame else "low"})
     direction = "right_to_left" if script in {"arabic", "old_north_arabian"} else "left_to_right"
@@ -551,7 +551,7 @@ def read_alphabetic(text: str, script: str, language: str) -> dict[str, Any]:
 
 # ------------------------------------------------------------------ whole-text reading
 def _whole_translation(text: str, reading: dict[str, Any]) -> dict[str, Any]:
-    sources = {"hieroglyphic": ["old_egyptian", "middle_egyptian"], "cuneiform": ["archaic_sumerian"],
+    sources = {"hieroglyphic": ["old_egyptian", "middle_egyptian"], "cuneiform": ["archaic_sumerian", "old_akkadian"],
                "ethiopic": ["geez", "old_amharic"], "old_italic": ["old_latin"], "old_north_arabian": ["old_arabic"], "arabic": ["old_arabic"]}
     for source in sources.get(reading["script"], []):
         try:
@@ -577,8 +577,9 @@ def _script_reader(text: str, script: str, language: str) -> dict[str, Any]:
 def _pronounce(translit: str, lang_id: str) -> str:
     if lang_id in {"old_egyptian", "middle_egyptian"}:
         return " ".join(egyptian_pronunciation(part) for part in re.split(r"\s+", translit.replace(".", "")) if part)
-    plain = re.sub(r"\d", "", translit).replace("ĝ", "ng").replace("š", "sh").replace("*", "")
-    return re.sub(r"ə(?=\b)", "", plain).replace("ʾ", "").replace("ʿ", "")
+    from ..ancient.phonetics import pronounce
+    found = pronounce(lang_id, translit)
+    return found["say"] if found and found["say"] else translit
 
 
 def read_text(text: str, language: str = "english") -> dict[str, Any] | None:

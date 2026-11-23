@@ -11,11 +11,13 @@ const EXAMPLES = [
   ['old_latin', 'ueritatei credidei'],
   ['middle_egyptian', 'n mꜣ nswt jtrw'],
   ['archaic_sumerian', '𒈗𒂊 𒂍 𒃲 𒈬𒌦𒆕'],
+  ['old_akkadian', 'šarrum bītam rabiam īpuš'],
   ['english', 'water'],
 ];
 
 const SCRIPT_LABELS = {
   cuneiform: 'Cuneiform',
+  sign_reading: 'Sign by sign',
   hieroglyphs: 'Hieroglyphs',
   fidel: "Ge'ez fidel",
   archaic_capitals: 'Archaic capitals',
@@ -127,18 +129,21 @@ function renderResults(data) {
     const refusal = result.refusal ? `<div class="warning">${esc(result.refusal)}</div>` : '';
     const notes = result.notes?.length ? `<details><summary>Notes</summary><ul>${result.notes.map(note => `<li>${esc(note)}</li>`).join('')}</ul></details>` : '';
     const reusable = result.text && !result.refusal && !result.gaps?.length;
+    const p = result.pronunciation;
+    const sayBlock = p?.say ? `<div class="ladder-say"><span class="microcopy">Say it</span> <strong>${esc(p.say)}</strong>${p.ipa ? ` <span class="ladder-ipa">${esc(p.ipa)}</span>` : ''}
+      <details><summary>How sure is this?</summary><p class="microcopy">${esc(p.note || '')}</p></details></div>` : '';
     return `<article class="card ladder-card status-${esc(result.status)}">
       <div class="ladder-card-head">
         <div><h3>${esc(result.language_name)}</h3><div class="microcopy">${esc(lang.period || '')}</div></div>
         <span class="pill ladder-status">${esc(STATUS_LABELS[result.status] || result.status)}</span>
       </div>
       <div class="ladder-text">${esc(result.text || '—')}</div>
-      ${scripts}${refusal}${gaps}
+      ${sayBlock}${scripts}${refusal}${gaps}
       <div class="microcopy">Confidence ${esc(Math.round((result.confidence || 0) * 100))}% · ${esc(lang.family || '')}</div>
       <div class="button-row wrap">
         ${reusable ? `<button type="button" class="secondary" data-reuse="${esc(id)}">Translate from here</button>` : ''}
         ${result.text ? `<button type="button" class="secondary" data-copy="${esc(id)}">Copy</button>` : ''}
-        ${(id === 'english' || id === 'swahili') && result.text ? `<button type="button" class="secondary" data-speak="${esc(id)}">Read aloud</button>` : ''}
+        ${result.text && (id === 'english' || id === 'swahili' || p?.say) ? `<button type="button" class="secondary" data-speak="${esc(id)}">Hear it</button>` : ''}
       </div>
       ${notes}
     </article>`;
@@ -176,6 +181,13 @@ function reuse(id) {
   $('#ladderInput').scrollIntoView({behavior: 'smooth', block: 'center'});
 }
 
+// Ancient words are read from their respelling (lu-ga-le), so the voice does not spell out sign numbers or diacritics.
+function sayAloud(result, id) {
+  if (id === 'english' || id === 'swahili') return speak(result.text, id);
+  const say = result.pronunciation?.say;
+  return say ? speak(say.toLowerCase(), 'english') : false;
+}
+
 // ------------------------------------------------------------------ quiz
 function renderQuestion() {
   const quiz = state.quiz;
@@ -192,7 +204,9 @@ function renderQuestion() {
   body.innerHTML = `<div class="quiz-question">
     <div class="microcopy">Question ${quiz.index + 1} of ${quiz.questions.length} · score ${quiz.score}</div>
     <div class="microcopy">${esc(ask)}</div>
-    <div class="quiz-prompt" dir="auto">${esc(q.prompt_text)}</div>${scripts}
+    <div class="quiz-prompt" dir="auto">${esc(q.prompt_text)}</div>
+    ${q.pronunciation?.say ? `<div class="ladder-say"><span class="microcopy">Say it</span> <strong>${esc(q.pronunciation.say)}</strong>
+      <button type="button" class="secondary small" id="ladderQuizHear">Hear it</button></div>` : ''}${scripts}
     <div class="quiz-choices">${q.choices.map((c, i) => `<button type="button" data-choice="${i}" dir="auto">${esc(c)}</button>`).join('')}</div>
     <div class="quiz-feedback microcopy" aria-live="polite"></div></div>`;
 }
@@ -210,7 +224,8 @@ async function answerQuestion(button) {
     if (text === q.answer) b.classList.add('right'); else if (b === button) b.classList.add('wrong');
     b.disabled = true;
   });
-  const notes = (q.notes || []).length ? ` ${q.notes.join(' ')}` : '';
+  const answerSay = q.answer_pronunciation?.say ? ` Say it: ${q.answer_pronunciation.say}.` : '';
+  const notes = `${answerSay}${(q.notes || []).length ? ` ${q.notes.join(' ')}` : ''}`;
   $('#ladderQuizBody .quiz-feedback').innerHTML = `${right ? 'Correct.' : `Not quite. The answer is “${esc(q.answer)}”.`}${esc(notes)}
     <div class="button-row"><button type="button" id="ladderQuizNext">${quiz.index + 1 < quiz.questions.length ? 'Next question' : 'See my score'}</button></div>`;
   if (appState.user) {
@@ -257,6 +272,10 @@ export async function initLadder() {
     if (button.dataset.choice !== undefined) answerQuestion(button);
     if (button.id === 'ladderQuizNext') { state.quiz.index += 1; renderQuestion(); }
     if (button.id === 'ladderQuizAgain') startQuiz();
+    if (button.id === 'ladderQuizHear') {
+      const q = state.quiz.questions[state.quiz.index];
+      if (!speak(q.pronunciation.say.toLowerCase(), 'english')) toast('Speech synthesis is not available on this device.');
+    }
   });
   $('#ladderResults').addEventListener('click', async event => {
     const button = event.target.closest('button');
@@ -268,7 +287,7 @@ export async function initLadder() {
       try { await navigator.clipboard.writeText(text); toast('Copied.'); } catch { toast('Copy is not available in this browser.'); }
     }
     if (button.dataset.speak) {
-      if (!speak(state.last.results[button.dataset.speak].text, button.dataset.speak)) toast('Speech synthesis is not available on this device.');
+      if (!sayAloud(state.last.results[button.dataset.speak], button.dataset.speak)) toast('Speech synthesis is not available on this device.');
     }
   });
 }

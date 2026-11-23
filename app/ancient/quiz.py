@@ -33,7 +33,7 @@ def _word_items(lang: str, explain: str) -> list[dict[str, Any]]:
                 continue
             meaning = REALIZERS[explain].realize(frame)["text"]
             items.append({"concept": concept, "kind": kind, "form": out["text"], "scripts": out["scripts"],
-                          "status": out["status"], "meaning": meaning, "notes": out["notes"][:2]})
+                          "status": out["status"], "meaning": meaning, "notes": out["notes"][:2], "pronunciation": out.get("pronunciation")})
     return items
 
 
@@ -107,7 +107,8 @@ def _sentence_items(lang: str, explain: str, count: int, rng: random.Random) -> 
             continue
         seen.add(out["text"])
         items.append({"kind": "sentence", "prompt_text": out["text"], "scripts": out["scripts"], "status": out["status"],
-                      "choices": _choices(correct, wrong, rng), "answer": correct, "notes": out["notes"][:3]})
+                      "choices": _choices(correct, wrong, rng), "answer": correct, "notes": out["notes"][:3],
+                      "pronunciation": out.get("pronunciation")})
     return items
 
 
@@ -141,11 +142,11 @@ def make_quiz(language: str, explain: str = "english", mode: str = "mixed", coun
         if kind == "meaning":
             questions.append({"kind": "meaning", "prompt_text": item["form"], "scripts": item["scripts"], "status": item["status"],
                               "choices": _choices(item["meaning"], [w["meaning"] for w in same_kind], rng), "answer": item["meaning"],
-                              "notes": item["notes"]})
+                              "notes": item["notes"], "pronunciation": item["pronunciation"]})
         else:
             questions.append({"kind": "form", "prompt_text": item["meaning"], "scripts": {}, "status": item["status"],
                               "choices": _choices(item["form"], [w["form"] for w in same_kind], rng), "answer": item["form"],
-                              "notes": item["notes"]})
+                              "notes": item["notes"], "answer_pronunciation": item["pronunciation"]})
     rng.shuffle(questions)
     for number, q in enumerate(questions, 1):
         q["id"] = number

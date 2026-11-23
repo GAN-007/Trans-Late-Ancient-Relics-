@@ -125,7 +125,7 @@ class Realizer:
                 out[name] = value[:-1] + "፧"  # Ethiopic question mark
             elif name.startswith("arabic"):
                 out[name] = value + "؟"
-            elif name == "cuneiform":
+            elif name in {"cuneiform", "sign_reading"}:
                 out[name] = value + "?"  # Sumerian writing has no question marker; editorial, as in the transliteration
             else:
                 out[name] = value
@@ -169,6 +169,12 @@ class Realizer:
             "gaps": gaps,
             "notes": list(dict.fromkeys(n for t in tokens for n in t.flags.get("notes", []))),
         }
+        if real and self.id != "english":
+            from .phonetics import pronounce  # every rung carries how to say it
+            result["pronunciation"] = pronounce(self.id, text)
+            for token in result["tokens"]:
+                if token.get("type") != "gap" and token["text"]:
+                    token["say"] = (pronounce(self.id, token["text"]) or {}).get("say", "")
         if refusal:
             result["refusal"] = refusal
             result["status"] = "not_attested_for_this_structure"
@@ -947,6 +953,126 @@ class OldAmharic(Realizer):
         return {"fidel": scripts.ethiopic([w for t in tokens if not t.is_gap for w in t.text.split()], amharic=True)}
 
 
+# ================================================================ Old Akkadian
+class OldAkkadian(Realizer):
+    id, name, status = "old_akkadian", "Old Akkadian", "attested"
+    period = "c. 2350-2150 BCE (Sargonic royal inscriptions of Sargon, Rimush and Naram-Sin); the oldest written Semitic language"
+    family, writing, order = "Afro-Asiatic (Semitic, East)", "Syllabic cuneiform", "SOV"
+    notes = ["Forms follow Old Akkadian conventions: mimation (-um/-am/-im), uncontracted vowels (rabium) and the 3rd feminine prefix ta-; "
+             "later Old Babylonian contracts vowels and uses i- for 'she'.",
+             "Cuneiform is given in a standard syllabic spelling; the scribes often wrote nouns with Sumerian logograms instead (LUGAL for šarrum)."]
+    PRON = {"1s": "anāku", "2ms": "atta", "2fs": "atti", "3ms": "šū", "3fs": "šī", "1p": "nīnu", "2p": "attunu", "3p": "šunu"}
+    CASES = {"nom": 0, "acc": 1, "gen": 2}
+    NEG_NOTE = "ula is the Old Akkadian main-clause negative (u-la); Old Babylonian has ul."
+    question_note = "Akkadian marks yes/no questions by intonation only; the question mark is editorial."
+
+    def _noun(self, n: dict, case: str) -> str:
+        if case == "nom":
+            return n["f"]
+        if case in n:
+            return n[case]
+        return n["f"][:-2] + {"acc": "am", "gen": "im"}[case]
+
+    def np(self, spec, role, verb=None):
+        case = {"subject": "nom", "predicate": "nom", "citation": "nom"}.get(role, "acc")
+        prep = (form("verb", verb, "akk") or {}).get("prep") if role == "object" and verb else None
+        if prep:
+            case = "gen"
+        tokens: list[Token] = []
+        if prep:
+            tokens.append(Token(prep, {"type": "prep"}))
+        number = spec.get("agree", "m")
+        if spec.get("noun"):
+            n = form("noun", spec["noun"], "akk")
+            if not n:
+                return [gap("noun", spec["noun"])]
+            number = "mpl" if n.get("pl") else n["g"]
+            tokens.append(Token(self._noun(n, case), {"type": "noun", "concept": spec["noun"], "role": role, "case": case}, n.get("c", "high"),
+                                {"notes": [n["note"]] if n.get("note") else []}))
+        if spec.get("adj"):
+            a = form("adj", spec["adj"], "akk")
+            tokens.append(Token(a[number][self.CASES[case]], {"type": "adj", "concept": spec["adj"], "case": case}, a.get("c", "high"),
+                                {"notes": [a["note"]] if a.get("note") else []}))
+        return tokens
+
+    def _person(self, subject: dict[str, Any]) -> str:
+        if subject.get("noun"):
+            n = form("noun", subject["noun"], "akk") or {}
+            if n.get("pl"):
+                return "3p"
+            return "3fs" if n.get("g") == "f" else "3ms"
+        return subject_person(subject)
+
+    def verb(self, verb, person, tense, subject_noun=None):
+        v = form("verb", verb, "akk")
+        if not v:
+            return [gap("verb", verb)]
+        word = v["past" if tense == "past" else "present"][PERSONS.index(person)]
+        notes = ["Preterite (past)" if tense == "past" else "Durative (present-future)"] + ([v["note"]] if v.get("note") else [])
+        return [Token(word, {"type": "verb", "verb": verb, "person": person, "tense": tense}, v.get("c", "high"), {"notes": notes})]
+
+    def citation_verb(self, verb):
+        v = form("verb", verb, "akk")
+        if not v:
+            return [gap("verb", verb)]
+        return [Token(v["inf"], {"type": "verb", "verb": verb}, v.get("c", "high"), {"notes": ["Infinitive, the dictionary form."]})]
+
+    def adjective_word(self, adj):
+        a = form("adj", adj, "akk")
+        return [Token(a["m"][0], {"type": "adj", "concept": adj}, a.get("c", "high"))]
+
+    def _negation(self) -> Token:
+        return Token("ula", {"type": "neg"}, "medium", {"notes": [self.NEG_NOTE]})
+
+    def clause(self, frame):
+        subject = frame["subject"]
+        tokens: list[Token] = []
+        if subject.get("noun"):
+            tokens += self.np(subject, "subject")
+        if frame.get("object"):
+            tokens += self.np(frame["object"], "object", frame["verb"])
+        if frame.get("negative"):
+            tokens.append(self._negation())
+        tokens += self.verb(frame["verb"], self._person(subject), frame["tense"])
+        return tokens
+
+    def identity(self, frame):
+        subject, predicate = frame["subject"], frame["predicate"]
+        person = self._person(subject)
+        tokens: list[Token] = []
+        if not predicate.get("noun"):
+            # Adjective predicates are statives: šarrum rabi 'the king is great', damqāku 'I am good'
+            if subject.get("noun"):
+                tokens += self.np(subject, "subject")
+            if frame.get("negative"):
+                tokens.append(self._negation())
+            a = form("adj", predicate["adj"], "akk")
+            tokens.append(Token(a["stative"][PERSONS.index(person)],
+                                {"type": "adj", "concept": predicate["adj"], "role": "predicate", "stative": True, "copula": person},
+                                a.get("c", "high"), {"notes": ["Stative: the adjective conjugated as a predicate."]}))
+            return tokens
+        # Noun predicates: verbless clause (anāku wardum 'I am a servant', šarrum wardum 'the king is a servant')
+        if subject.get("noun"):
+            tokens += self.np(subject, "subject")
+        else:
+            tokens.append(Token(self.PRON[person], {"type": "pron", "person": person}))
+        if frame.get("negative"):
+            tokens.append(self._negation())
+        tokens += self.np(predicate, "predicate")
+        return tokens
+
+    def render_scripts(self, tokens):
+        glyphs, readings = [], []
+        for t in tokens:
+            if t.is_gap:
+                continue
+            for word in t.text.split():
+                g, r = scripts.akkadian_cuneiform(word)
+                glyphs.append(g)
+                readings.append(r)
+        return {"cuneiform": " ".join(glyphs), "sign_reading": " ".join(readings)}
+
+
 # ================================================================= Proto-Semitic
 class ProtoSemitic(Realizer):
     id, name, status = "proto_semitic", "Proto-Semitic", "reconstructed"
@@ -1256,7 +1382,7 @@ class ProtoWorld(Realizer):
 
 REALIZERS: dict[str, Realizer] = {
     r.id: r for r in (
-        English(), Swahili(), Sumerian(), OldLatin(), OldArabic(), Geez(), OldAmharic(),
+        English(), Swahili(), Sumerian(), OldAkkadian(), OldLatin(), OldArabic(), Geez(), OldAmharic(),
         ProtoSemitic(), ProtoWorld(), ArchaicHieroglyphic(), OldEgyptian(), MiddleEgyptian(),
     )
 }
