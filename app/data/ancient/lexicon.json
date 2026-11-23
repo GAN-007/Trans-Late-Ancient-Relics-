@@ -285,7 +285,21 @@
       "am": {"f": "ṭat", "g": "m", "c": "high"},
       "sem": {"f": "ʔiṣbaʕ", "g": "f", "c": "medium"},
       "egy": {"f": "ḏbꜥ", "g": "m", "gl": ["D050"], "c": "high"},
-      "pw": {"f": "tik", "c": "low", "note": "Proposed Proto-World *TIK 'finger, one' - the best-known Proto-World etymology."}}
+      "pw": {"f": "tik", "c": "low", "note": "Proposed Proto-World *TIK 'finger, one' - the best-known Proto-World etymology."}},
+    "temple": {"en": ["temple", "shrine", "sanctuary"], "sw": {"f": "hekalu", "sp": "li", "ap": ""},
+      "sux": {"f": "eš3", "signs": ["AB"], "c": "medium", "note": "eš3 'shrine, sanctuary'; a temple is also simply called e2 'house' (e2 dingir 'house of the god')."},
+      "la": {"nom": "templom", "acc": "templom", "dat": "temploi", "g": "n", "cl": "templum", "c": "medium"},
+      "ar": {"f": "haykal", "g": "m", "c": "medium", "note": "A loan through Aramaic haykəlā and Akkadian ekallu from Sumerian e2-gal 'great house'."},
+      "gez": {"f": "maqdas", "g": "m", "c": "high"},
+      "am": {"f": "betä mäqdäs", "g": "m", "c": "high"},
+      "egy": {"f": "ḥwt-nṯr", "g": "f", "gl": ["R008", "O006", "X001"], "c": "high", "note": "ḥwt-nṯr 'mansion of the god'; the god sign is written first out of respect."}},
+    "scribe": {"en": ["scribe", "writer"], "sw": {"f": "mwandishi", "sp": "a", "ap": "m"},
+      "sux": {"f": "dub-sar", "signs": ["DUB", "SAR"], "anim": true, "c": "high"},
+      "la": {"nom": "scriba", "acc": "scribam", "dat": "scribai", "g": "m", "cl": "scrība", "c": "high"},
+      "ar": {"f": "kātib", "g": "m", "c": "high"},
+      "gez": {"f": "ṣaḥāfi", "acc": "ṣaḥāfe", "g": "m", "c": "medium"},
+      "am": {"f": "ṣäḥafi", "g": "m", "c": "high"},
+      "egy": {"f": "zš", "g": "m", "gl": ["Y003", "A001"], "c": "high", "note": "Old Egyptian zš became Middle Egyptian sš."}}
   },
   "adjectives": {
     "good": {"en": ["good"], "sw": "zuri",
@@ -448,6 +462,14 @@
       "gez": {"perf": {"c": "ʿaqab", "v": "ʿaqab"}, "impf": {"stem": "ʿaqqəb", "pv": "ə"}, "c": "high"},
       "am": {"perf": ["ṭäbbäqku", "ṭäbbäqk", "ṭäbbäqš", "ṭäbbäqä", "ṭäbbäqäčč", "ṭäbbäqn", "ṭäbbäqaččəhu", "ṭäbbäqu"], "impf": "ṭäbbəq", "c": "high"},
       "sem": {"perf": "naṣ́ar", "impf": "naṣ́ṣ́ar", "c": "medium"},
-      "egy": {"perf": "ḫw", "pres": "ḫw", "gl": ["AA001", "G043"], "c": "medium"}}
+      "egy": {"perf": "ḫw", "pres": "ḫw", "gl": ["AA001", "G043"], "c": "medium"}},
+    "build": {"en": {"base": "build", "past": "built", "pp": "built", "s3": "builds"}, "sw": {"root": "jenga"},
+      "sux": {"root": "du3", "signs": ["KAK"], "maru": "du3", "trans": true, "c": "high", "note": "dù 'to build, make' is the verb of Sumerian building inscriptions (e2 mu-na-du3 'he built the temple for him')."},
+      "la": {"pres": ["aedifico", "aedificas", "aedificat", "aedificamos", "aedificatis", "aedificant"], "perf": ["aedificauei", "aedificauistei", "aedificauet", "aedificauimos", "aedificauistis", "aedificaueront"], "obj": "acc", "cl": "aedificō, aedificāvī", "c": "medium", "note": "aedificare is used by Plautus; the perfect is spelled with the archaic endings of fecei/feced."},
+      "ar": {"perf": {"c": "banay", "v": "ban", "3ms": "banā", "3fs": "banat", "3p": "banaw"}, "impf": {"list": ["ʾabnī", "tabnī", "tabnīna", "yabnī", "tabnī", "nabnī", "tabnūna", "yabnūna"]}, "c": "high"},
+      "gez": {"perf": {"c": "ḥanaṣ", "v": "ḥanaṣ"}, "impf": {"stem": "ḥanəṣ", "pv": "ə"}, "c": "high"},
+      "am": {"perf": ["gännäbbaku", "gännäbbak", "gännäbbaš", "gännäbba", "gännäbbačč", "gännäbban", "gännäbbaččəhu", "gännäbbu"], "impf": "gänba", "c": "high"},
+      "sem": {"perf": "banay", "impf": "bniy", "c": "medium", "note": "Root *b-n-y 'build' is secure (Akkadian banû, Hebrew bānā, Arabic banā); the inflected forms are reconstructed."},
+      "egy": {"perf": "qd", "pres": "qd", "gl": ["AA028", "D046", "A035"], "c": "high"}}
   }
 }

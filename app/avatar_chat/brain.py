@@ -143,6 +143,7 @@ def _card(result: dict[str, Any], targets: list[str]) -> dict[str, Any]:
         "type": "ladder",
         "source": result["source"],
         "source_language": result["source_language"],
+        **({"warning": result["warning"]} if result.get("warning") else {}),
         "rows": [
             {"language": lang, "name": REALIZERS[lang].name, "text": r["text"], "scripts": r["scripts"],
              "status": r["status"], "confidence": r["confidence"], "refusal": r.get("refusal")}
@@ -176,6 +177,9 @@ def tool_translate(text: str, target: str, persona: Persona) -> ToolResult | Non
     if composed:
         spoken.append("Sentensi hizi zimejengwa kwa kanuni za sarufi, si nukuu za maandishi ya kale." if sw
                       else "These sentences are built from grammar rules, not quoted from ancient texts.")
+    if not result.get("complete", True):
+        left = [f"'{w}'" for w in dict.fromkeys(result["parse"]["unknown_words"])] + result["parse"].get("not_translated", [])
+        spoken.append((f"Sikutafsiri sehemu hii: {', '.join(left)}." if sw else f"I left out {', '.join(left)}, which the grammar can't express yet."))
     if target == "all":
         spoken.append("Nimeweka lugha zote kwenye kadi." if sw else "I've put every language on the card.")
     facts = {lang: {"text": r["text"], "scripts": r["scripts"], "status": r["status"], "refusal": r.get("refusal")} for lang, r in rows.items()}
