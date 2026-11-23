@@ -29,6 +29,8 @@ All secrets are server-side environment variables. The browser never receives AP
 | `ESHB_AVATAR_HEARTBEAT_TIMEOUT` | 30 | seconds without a heartbeat before a chat closes |
 | `ESHB_AVATAR_CONNECTION_TTL` | 900 | maximum chat length in seconds |
 | `ESHB_AVATAR_HISTORY_TURNS` | 20 | dialogue turns kept in memory for the model |
+| `ESHB_AVATAR_IMAGES_PER_MINUTE` | 20 | photos and camera frames per minute per chat |
+| `ESHB_WARMUP` | true | build translation and reading indexes in the background at startup |
 
 ## Production
 

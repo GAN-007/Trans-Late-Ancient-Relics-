@@ -8,6 +8,7 @@
   <meta name="description" content="Live Ancient Egyptian learning and contextual translation with English, Swahili, hieroglyphs, voice and camera assistance, plus an any-to-any ladder across the oldest stages of Sumerian, Egyptian, Latin, Arabic, Ge'ez and Amharic.">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/fonts/fonts.css">
   <link rel="stylesheet" href="/static/styles.css">
   <title>Trans-Late Ancient Relics</title>
 </head>
@@ -215,9 +216,14 @@
             <div class="section-kicker">LIVE AVATAR CHAT</div>
             <h2 id="avatarTitle">Talk with a guide</h2>
           </div>
-          <label for="avatarPersona" class="avatar-persona-label">Guide
-            <select id="avatarPersona"></select>
-          </label>
+          <div class="avatar-pickers">
+            <label for="avatarPersona" class="avatar-persona-label">Guide
+              <select id="avatarPersona"></select>
+            </label>
+            <label for="avatarLanguage" class="avatar-language-label">Your language
+              <select id="avatarLanguage"><option value="english">English</option><option value="swahili">Kiswahili</option></select>
+            </label>
+          </div>
         </div>
         <div class="avatar-stage" id="avatarStage" data-state="offline">
           <svg id="avatarSvg" viewBox="0 0 400 440" role="img" aria-labelledby="avatarSvgTitle">
@@ -259,6 +265,16 @@
             </g>
           </svg>
           <div class="avatar-state-badge" id="avatarStateBadge" aria-live="polite">Connecting…</div>
+          <div class="avatar-board" id="avatarBoard" hidden aria-live="polite">
+            <span class="avatar-board-glyphs" id="avatarBoardGlyphs" dir="auto"></span>
+            <span class="avatar-board-translit" id="avatarBoardTranslit"></span>
+            <span class="avatar-board-hint" id="avatarBoardHint"></span>
+          </div>
+          <div class="avatar-camera" id="avatarCameraBox" hidden>
+            <video id="avatarVideo" playsinline muted autoplay aria-label="Your camera"></video>
+            <span class="avatar-live-dot" id="avatarLiveDot" hidden>LIVE</span>
+          </div>
+          <canvas id="avatarCanvas" hidden></canvas>
           <div class="avatar-subtitle" id="avatarSubtitle" aria-live="polite"></div>
         </div>
         <div class="avatar-controls">
@@ -266,18 +282,26 @@
           <button id="avatarInterruptBtn" class="secondary" disabled>Stop speaking</button>
           <button id="avatarMuteBtn" class="secondary" aria-pressed="false">Mute voice</button>
         </div>
+        <div class="avatar-controls avatar-see-controls">
+          <button id="avatarCameraBtn" class="secondary" aria-pressed="false"><span aria-hidden="true">📷</span> Camera</button>
+          <button id="avatarSnapBtn" class="secondary" disabled>Read what I see</button>
+          <button id="avatarLiveBtn" class="secondary" aria-pressed="false" disabled>Live reading</button>
+        </div>
         <div class="avatar-options">
           <label class="check-label"><input id="avatarBargeIn" type="checkbox" checked> Interrupt by speaking</label>
           <label class="check-label"><input id="avatarSubtitles" type="checkbox" checked> Subtitles</label>
+          <label class="check-label"><input id="avatarFollowAlong" type="checkbox" checked> Highlight words as I read</label>
         </div>
-        <p class="microcopy" id="avatarStatus" role="status">Speech is recognized and spoken by your browser; only the recognized text is sent.</p>
+        <p class="microcopy" id="avatarStatus" role="status">Speech is recognized and spoken by your browser; only the recognized text is sent. Camera frames are read and then discarded.</p>
       </article>
       <article class="card avatar-chat-card">
         <div class="section-kicker">CONVERSATION</div>
         <div id="avatarRecords" class="avatar-records" aria-live="polite" aria-label="Conversation with the guide"></div>
         <form id="avatarForm" class="avatar-form" autocomplete="off">
+          <label for="avatarFile" class="avatar-attach" title="Share a photo"><span aria-hidden="true">📎</span><span class="sr-only">Share a photo</span></label>
+          <input id="avatarFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
           <label for="avatarInput" class="sr-only">Message</label>
-          <textarea id="avatarInput" rows="2" maxlength="2000" placeholder="Ask anything, e.g. How do you say “the king made a great house” in Sumerian?"></textarea>
+          <textarea id="avatarInput" rows="2" maxlength="2000" placeholder="Ask anything, paste hieroglyphs or cuneiform, or drop a photo here"></textarea>
           <button id="avatarSendBtn" type="submit" disabled>Send</button>
         </form>
         <div class="ladder-examples" id="avatarSuggestions" aria-label="Suggested questions"></div>

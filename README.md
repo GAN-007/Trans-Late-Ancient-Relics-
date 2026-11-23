@@ -54,7 +54,7 @@ See [`docs/ANCIENT_LANGUAGE_LADDER.md`](docs/ANCIENT_LANGUAGE_LADDER.md).
 
 ## Live Avatar Chat
 
-Talk by voice or text with an animated guide (Nefer, Amani or Theo) in the **Live Chat** tab. It answers in English or Swahili, translates into the ancient languages with verified cards, lip-syncs, and can be interrupted mid-sentence. The architecture is ported from [OpenAvatarChat](https://github.com/HumanAIGC-Engineering/OpenAvatarChat) (Apache-2.0): speech recognition and voice run in the browser, and the server streams replies over `/ws/avatar`. It works offline from the built-in tools, and open conversation uses `OPENAI_API_KEY` or any OpenAI-compatible endpoint. See [`docs/LIVE_AVATAR_CHAT.md`](docs/LIVE_AVATAR_CHAT.md).
+Talk by voice or text with an animated guide (Nefer, Amani or Theo) in the **Live Chat** tab. Show it a wall of hieroglyphs through your camera, a photo, or pasted cuneiform or Ge'ez, and it reads it to you like a teacher: the direction, the whole meaning in English or Kiswahili, then word by word with each sign's sound and job, highlighting as it goes. Say "quiz me" and it teaches you to read it yourself. It translates into the ancient languages with verified cards, lip-syncs, and can be interrupted mid-sentence. The architecture is ported from [OpenAvatarChat](https://github.com/HumanAIGC-Engineering/OpenAvatarChat) (Apache-2.0): speech recognition and voice run in the browser, and the server streams replies over `/ws/avatar`. It works offline from the built-in tools, and open conversation uses `OPENAI_API_KEY` or any OpenAI-compatible endpoint. See [`docs/LIVE_AVATAR_CHAT.md`](docs/LIVE_AVATAR_CHAT.md).
 
 ## Accuracy boundary
 

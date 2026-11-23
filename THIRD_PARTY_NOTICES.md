@@ -17,3 +17,9 @@ Adapted portions, each modified as described in its module docstring:
 
 A copy of the Apache License 2.0 is available at https://www.apache.org/licenses/LICENSE-2.0.
 No OpenAvatarChat model weights, avatar assets or frontend code are included.
+
+## Noto fonts
+
+`app/static/fonts/*.woff2` are subsets of Noto Sans Egyptian Hieroglyphs, Noto Sans Cuneiform, Noto Sans Ethiopic,
+Noto Sans Old Italic and Noto Sans Old North Arabian, Copyright The Noto Project Authors, licensed under the
+SIL Open Font License 1.1 (`app/static/fonts/OFL.txt`). They were taken from the Fontsource 5.2.6 packages.

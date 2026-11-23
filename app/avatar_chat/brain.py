@@ -26,7 +26,9 @@ from ..ancient.engine import LADDER_ORDER, LadderError, concept_table, translate
 from ..ancient.grammar import REALIZERS
 from ..ancient.lexicon import english_index
 from ..ancient.parsing import parse
-from .personas import Persona
+from . import reading as reading_mod
+from . import tutor
+from .personas import LANGUAGES, Persona
 
 # ------------------------------------------------------------------ language names
 LANGUAGE_WORDS: dict[str, str] = {
@@ -95,6 +97,14 @@ class BrainContext:
     history: list[Turn] = field(default_factory=list)
     environment: dict[str, Any] = field(default_factory=dict)
     max_history: int = 20
+    lesson: dict[str, Any] | None = None  # the reading currently being taught
+    quiz: tutor.Quiz | None = None
+    rate_scale: float = 1.0  # learner can ask the guide to speak slower or faster
+    live_signature: str = ""  # last live-camera reading, so an unchanged scene is not re-read
+
+    @property
+    def language(self) -> str:
+        return self.persona.language
 
     def remember(self, role: str, text: str) -> None:
         if text.strip():
@@ -293,6 +303,9 @@ Rules:
 def compile_prompt(ctx: BrainContext, user_text: str, tools: list[ToolResult]) -> tuple[str, list[dict[str, str]]]:
     env = {k: v for k, v in ctx.environment.items() if v}
     state_lines = [t.summary for t in tools]
+    if ctx.lesson:
+        state_lines.append(reading_mod.reading_summary(ctx.lesson))
+    state_lines.append(f"The learner's chosen language is {LANGUAGES[ctx.language]['label']}; reply in it.")
     if env:
         state_lines.append("App context: " + json.dumps(env, ensure_ascii=False)[:1500])
     system = L1_CORE + "\n\n[Persona]\n" + ctx.persona.snapshot
@@ -360,8 +373,63 @@ async def stream_llm(system: str, messages: list[dict[str, str]], transport: htt
                     raise RuntimeError(str(event.get("error") or event.get("response", {}).get("error") or "model error"))
 
 
+def _says(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [{"type": "say", **line} for line in lines]
+
+
+def lesson_turn(ctx: BrainContext, text: str) -> list[dict[str, Any]] | None:
+    """Teacher behaviour: reading pasted script, quizzing, re-reading, pacing. None = not a lesson turn."""
+    lang = ctx.language
+    en = lang == "english"
+    if tutor.SLOWER.search(text) or tutor.FASTER.search(text):
+        slower = bool(tutor.SLOWER.search(text))
+        ctx.rate_scale = max(0.6, ctx.rate_scale - 0.15) if slower else min(1.3, ctx.rate_scale + 0.15)
+        return _says([{"text": ("Of course, I'll speak more slowly." if slower else "Sure, a little faster.") if en
+                       else ("Sawa, nitazungumza polepole zaidi." if slower else "Sawa, kwa kasi kidogo."), "segment": None}])
+    if reading_mod.native_script_ratio(text) >= 0.25:
+        reading = reading_mod.read_text(text, lang)
+        if reading and reading["ok"]:
+            ctx.lesson, ctx.quiz = reading, None
+            return [{"type": "reading", "reading": reading}] + _says(reading_mod.narrate(reading, lang))
+    if not ctx.lesson:
+        return None
+    if ctx.quiz:
+        if tutor.STOP.search(text):
+            lines = tutor.finish(ctx.quiz, lang)  # carries quiz_done so the card reveals its answers
+            ctx.quiz = None
+            return _says(lines)
+        if tutor.REPEAT.search(text):
+            return _says(tutor.repeat(ctx.lesson, ctx.quiz, lang))
+        lines = tutor.answer(ctx.lesson, ctx.quiz, text, lang)
+        if any(line.get("quiz_done") for line in lines):
+            ctx.quiz = None
+        return _says(lines)
+    if tutor.STOP.search(text):
+        return _says([{"text": "Okay. Show me something else whenever you like." if en else "Sawa. Nionyeshe kitu kingine wakati wowote.", "segment": None}])
+    if tutor.START.search(text):
+        ctx.quiz, lines = tutor.start(ctx.lesson, lang)
+        return _says(lines)
+    if tutor.READ_AGAIN.search(text):
+        return [{"type": "reading", "reading": ctx.lesson}] + _says(reading_mod.narrate(ctx.lesson, lang))
+    word = tutor.WORD_N.search(text)
+    if word:
+        index = int(word.group(1)) - 1
+        segments = ctx.lesson["segments"]
+        if 0 <= index < len(segments):
+            single = {**ctx.lesson, "segments": [segments[index]], "summary": "", "translation": {}}
+            lines = [line for line in reading_mod.narrate(single, lang, first_number=index + 1) if line["segment"] is not None]
+            return _says([{**line, "segment": index} for line in lines])
+        return _says([{"text": (f"This reading has {len(segments)} words." if en else f"Usomaji huu una maneno {len(segments)}."), "segment": None}])
+    return None
+
+
 async def think(ctx: BrainContext, user_text: str, transport: httpx.AsyncBaseTransport | None = None) -> AsyncIterator[dict[str, Any]]:
-    """Yield {'type':'card'|'delta'|'notice', ...} events for one user turn."""
+    """Yield {'type':'card'|'reading'|'say'|'delta'|'notice', ...} events for one user turn."""
+    lesson = lesson_turn(ctx, user_text)
+    if lesson is not None:
+        for event in lesson:
+            yield event
+        return
     tools = run_tools(user_text, ctx.persona)
     use_llm = llm_status()["configured"]
     if not use_llm:
@@ -388,3 +456,89 @@ async def think(ctx: BrainContext, user_text: str, transport: httpx.AsyncBaseTra
         yield {"type": "notice", "text": f"Language model unavailable ({exc}); answering from the built-in tools."}
         for chunk in re.findall(r"\S+\s*", offline_reply(user_text, ctx.persona, tools)):
             yield {"type": "delta", "text": chunk}
+
+
+# ------------------------------------------------------------------ seeing: photos and the live camera
+GENERIC_QUESTION = re.compile(r"^\s*(?:what\s+does\s+(?:this|it|that|the)(?:\s+\w+){0,2}\s+say|what\s+(?:is\s+)?written(?:\s+here)?|read\s+(?:this|it)(?:\s+to\s+me)?|what\s+is\s+(?:this|that)|translate\s+(?:this|it)|inasema\s+nini|nisomee|hii\s+ni\s+nini|tafsiri\s+hii)?\s*[?.!]*\s*$", re.I)
+
+
+def _vision_backends() -> tuple[bool, bool]:
+    from ..vision import vision_status
+    status = vision_status()
+    requested = status["requested_backend"]
+    local = bool(status["local"]["available"]) and requested in {"auto", "local", "hybrid"}
+    model = bool(status["ai"]["configured"]) and requested in {"auto", "ai", "hybrid"}
+    return local, model
+
+
+async def see(ctx: BrainContext, image_data_url: str, question: str = "", source: str = "upload",
+              transport: httpx.AsyncBaseTransport | None = None) -> AsyncIterator[dict[str, Any]]:
+    """Read a photo or camera frame aloud, then teach it."""
+    import asyncio
+
+    from ..vision import _local_to_analysis, decode_image_data_url
+    from ..vision_local import run_local_detection
+
+    lang = ctx.language
+    en = lang == "english"
+    live = source == "live"
+    metadata, raw = decode_image_data_url(image_data_url)
+    local, model = _vision_backends()
+    if not local and not model:
+        if not live:
+            yield {"type": "say", "segment": None, "text": (
+                "I can't see images yet, because no vision model is connected to this app. You can paste the signs as text and I'll read them, "
+                "or an administrator can set OPENAI_API_KEY or install the on-device sign detector." if en else
+                "Bado siwezi kuona picha, kwa sababu hakuna modeli ya kuona iliyounganishwa. Bandika alama kama maandishi nami nitazisoma, "
+                "au msimamizi aweke OPENAI_API_KEY au kitambuzi cha alama cha ndani.")}
+        else:
+            yield {"type": "live_unavailable"}
+        return
+    if not live:
+        yield {"type": "say", "segment": None, "text": "Let me take a close look." if en else "Ngoja niangalie kwa makini."}
+
+    detector_reading = None
+    if local:
+        detection = await asyncio.to_thread(run_local_detection, raw, metadata["mime"])
+        detector_reading = reading_mod.reading_from_detector(_local_to_analysis(detection), lang)
+    model_reading = None
+    if model:
+        try:
+            model_reading = await reading_mod.read_image(image_data_url, lang, "" if GENERIC_QUESTION.match(question or "") else question)
+        except Exception as exc:  # provider/network failure: fall back to the detector, honestly
+            yield {"type": "notice", "text": f"Vision model unavailable: {exc}"}
+    reading = model_reading or detector_reading
+    if model_reading and detector_reading:
+        mine = {s["transliteration"] for s in detector_reading["segments"]}
+        theirs = {s["transliteration"] for s in model_reading["segments"]}
+        if mine and not (mine & theirs):
+            reading["notes"].append("The on-device detector and the vision model disagree on these signs; check them closely."
+                                    if en else "Kitambuzi cha ndani na modeli ya kuona havikubaliani kuhusu alama hizi; zihakiki kwa makini.")
+    if not reading or not reading.get("segments"):
+        if live:
+            yield {"type": "live_unchanged"}
+            return
+        empty = reading or {"script_name": "", "segments": [], "is_text_present": False, "translation": {}}
+        empty["is_text_present"] = False
+        for line in reading_mod.narrate({**empty, "script_name": empty.get("script_name", "")}, lang):
+            yield {"type": "say", **line}
+        return
+    signature = "|".join(s["transliteration"] or s["original"] for s in reading["segments"])
+    if live and signature == ctx.live_signature:
+        yield {"type": "live_unchanged"}
+        return
+    ctx.live_signature = signature
+    ctx.lesson, ctx.quiz = reading, None
+    yield {"type": "reading", "reading": reading}
+    for line in reading_mod.narrate(reading, lang, detail="short" if live else "full"):
+        yield {"type": "say", **line}
+    if live:
+        yield {"type": "say", "segment": None, "text": "Say read it to me and I'll teach it word by word." if en
+               else "Sema nisomee nami nitakufundisha neno kwa neno."}
+    if question and not GENERIC_QUESTION.match(question) and llm_status()["configured"]:
+        system, messages = compile_prompt(ctx, question, [])
+        try:
+            async for delta in stream_llm(system, messages, transport):
+                yield {"type": "delta", "text": delta}
+        except Exception as exc:
+            yield {"type": "notice", "text": f"The language model could not answer the follow-up: {exc}"}

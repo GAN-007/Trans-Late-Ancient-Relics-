@@ -29,14 +29,16 @@ from typing import Any
 from fastapi import WebSocket, WebSocketDisconnect
 
 from ..streaming import ConnectionRate, _origin_allowed
-from .brain import BrainContext, llm_status, think
-from .personas import PERSONAS, get_persona
+from .brain import BrainContext, _vision_backends, llm_status, see, think
+from .personas import LANGUAGES, PERSONAS, get_persona
 from .text_tools import SentenceBuffer, speakable
 from .visemes import motion_track
 
 MAX_MESSAGE_BYTES = 16_000
+MAX_IMAGE_MESSAGE_BYTES = 7_500_000  # a 5 MB image as a base64 data URL
 MAX_HUMAN_TEXT = 2_000
-CLIENT_MESSAGES = {"InitializeAvatarSession", "SendHumanText", "Interrupt", "TriggerHeartbeat", "EndSpeech", "UpdateContext", "SetPersona"}
+CLIENT_MESSAGES = {"InitializeAvatarSession", "SendHumanText", "SendHumanImage", "Interrupt", "TriggerHeartbeat", "EndSpeech",
+                   "UpdateContext", "SetPersona", "SetLanguage"}
 
 
 def _limit(name: str, default: int) -> int:
@@ -88,6 +90,7 @@ class AvatarSession:
     started: float = field(default_factory=time.monotonic)
     last_seen: float = field(default_factory=time.monotonic)
     initialized: bool = False
+    chosen_language: str | None = None  # set only when the learner picks a language explicitly
 
     # ------------------------------------------------------------ sending
     async def send(self, name: str, payload: dict[str, Any] | None = None, request_id: str | None = None) -> None:
@@ -140,7 +143,11 @@ class AvatarSession:
 
     # ------------------------------------------------------------ handlers
     async def on_initialize(self, payload: dict[str, Any], request_id: str) -> None:
-        persona = get_persona(payload.get("persona"))
+        base = get_persona(payload.get("persona"))
+        if payload.get("language") in LANGUAGES:
+            self.chosen_language = payload["language"]
+        language = self.chosen_language or base.language
+        persona = base.localized(language)
         self.brain = BrainContext(persona=persona, max_history=_limit("ESHB_AVATAR_HISTORY_TURNS", 20))
         self.brain.environment = _clean_context(payload.get("context"))
         self.initialized = True
@@ -150,6 +157,9 @@ class AvatarSession:
             "persona": persona.public(),
             "personas": [p.public() for p in PERSONAS.values()],
             "llm": {"configured": status["configured"], "model": status["model"], "api": status["api"]},
+            "language": persona.language,
+            "languages": [{"id": key, "label": value["label"], "asr": value["asr"]} for key, value in LANGUAGES.items()],
+            "vision": dict(zip(("on_device_detector", "vision_model"), _vision_backends())),
             "limits": {"heartbeat_timeout": _limit("ESHB_AVATAR_HEARTBEAT_TIMEOUT", 30),
                        "connection_ttl": _limit("ESHB_AVATAR_CONNECTION_TTL", 900), "max_text": MAX_HUMAN_TEXT},
         }, request_id)
@@ -165,7 +175,8 @@ class AvatarSession:
         stream.status = "ended"
         await self.signal("stream_end", stream)
 
-    async def send_speech(self, stream_key: str, index: int, sentence: str, final: bool) -> None:
+    async def send_speech(self, stream_key: str, index: int, sentence: str, final: bool, segment: int | None = None,
+                          extra: dict[str, Any] | None = None) -> None:
         assert self.brain
         spoken = speakable(sentence)
         if not spoken:
@@ -173,11 +184,17 @@ class AvatarSession:
                 await self.send("AvatarSpeech", {"stream_key": stream_key, "index": index, "text": "", "end_of_speech": True})
             return
         persona = self.brain.persona
-        await self.send("AvatarSpeech", {
+        rate = round(persona.voice_rate * self.brain.rate_scale, 2)
+        payload: dict[str, Any] = {
             "stream_key": stream_key, "index": index, "text": spoken, "end_of_speech": final,
-            "voice": {"lang": persona.voice_lang, "rate": persona.voice_rate, "pitch": persona.voice_pitch},
-            "motion": motion_track(spoken, persona.voice_rate),
-        })
+            "voice": {"lang": persona.voice_lang, "rate": rate, "pitch": persona.voice_pitch},
+            "motion": motion_track(spoken, rate),
+        }
+        if segment is not None:
+            payload["segment"] = segment
+        if extra:
+            payload.update(extra)
+        await self.send("AvatarSpeech", payload)
 
     async def on_human_text(self, payload: dict[str, Any], request_id: str) -> None:
         if not self.brain:
@@ -208,17 +225,32 @@ class AvatarSession:
         self.reply_stream = reply.key
         self.reply_task = asyncio.create_task(self.generate(full, reply))
 
-    async def generate(self, user_text: str, stream: Stream) -> None:
+    async def generate(self, user_text: str, stream: Stream, events: Any = None, remember_as: str | None = None) -> None:
         assert self.brain
         await self.signal("stream_begin", stream)
         buffer = SentenceBuffer(split_on_clause=False)
         spoken_index = 0
         reply_text = ""
+        source = events if events is not None else think(self.brain, user_text, self.transport)
         try:
-            async for event in think(self.brain, user_text, self.transport):
+            async for event in source:
                 if stream.status == "cancelled":
                     return
-                if event["type"] == "card":
+                if event["type"] == "say":
+                    for sentence in buffer.flush():  # never let a full sentence overtake streamed text
+                        await self.send_speech(stream.key, spoken_index, sentence, final=False)
+                        spoken_index += 1
+                    text = event["text"]
+                    reply_text += text + " "
+                    await self.send("EchoAvatarText", {"stream_key": stream.key, "mode": "increment", "text": text + " ", "end_of_speech": False})
+                    extra = {k: event[k] for k in ("correct", "quiz", "quiz_done") if k in event}
+                    await self.send_speech(stream.key, spoken_index, text, final=False, segment=event.get("segment"), extra=extra)
+                    spoken_index += 1
+                elif event["type"] == "reading":
+                    await self.send("AvatarReading", {"stream_key": stream.key, "reading": event["reading"]})
+                elif event["type"] in {"live_unchanged", "live_unavailable"}:
+                    await self.send("AvatarLiveStatus", {"stream_key": stream.key, "status": event["type"]})
+                elif event["type"] == "card":
                     await self.send("AvatarCard", {"stream_key": stream.key, "card": event["card"]})
                 elif event["type"] == "notice":
                     await self.send("AvatarNotice", {"stream_key": stream.key, "text": event["text"]})
@@ -237,8 +269,9 @@ class AvatarSession:
             await self.send("EchoAvatarText", {"stream_key": stream.key, "mode": "increment", "text": "", "end_of_speech": True})
             stream.status = "ended"
             await self.signal("stream_end", stream)
-            self.brain.remember("user", user_text)
-            self.brain.remember("assistant", reply_text)
+            if reply_text.strip():
+                self.brain.remember("user", remember_as or user_text)
+                self.brain.remember("assistant", reply_text)
         except asyncio.CancelledError:
             raise
         except Exception as exc:  # never leave the client waiting on a half-open stream
@@ -249,6 +282,62 @@ class AvatarSession:
         finally:
             if self.reply_stream == stream.key:
                 self.reply_stream = None
+
+    async def on_human_image(self, payload: dict[str, Any], request_id: str) -> None:
+        if not self.brain:
+            return await self.error("INVALID_SESSION", "Send InitializeAvatarSession first.", request_id)
+        image = payload.get("image")
+        question = str(payload.get("text") or "")[:MAX_HUMAN_TEXT]
+        source = payload.get("source") if payload.get("source") in {"upload", "camera", "live"} else "upload"
+        if not isinstance(image, str) or not image.startswith("data:image/"):
+            return await self.error("INVALID_MESSAGE", "SendHumanImage needs payload.image as a PNG, JPEG or WebP data URL.", request_id)
+        live = source == "live"
+        busy = bool(self.reply_task and not self.reply_task.done())
+        if live and busy:
+            # A live frame never interrupts the guide; it is simply skipped.
+            return await self.send("AvatarLiveStatus", {"status": "busy"}, request_id)
+        if not self.image_rate.check():
+            if live:
+                return await self.send("AvatarLiveStatus", {"status": "throttled"}, request_id)
+            return await self.error("RATE_LIMIT", "That's a lot of pictures at once. Give me a moment.", request_id)
+        try:
+            from ..vision import decode_image_data_url
+            decode_image_data_url(image)
+        except ValueError as exc:
+            return await self.error("INVALID_MESSAGE", str(exc), request_id)
+        if not live:
+            interrupted = await self.cancel_reply("new_human_turn")
+            if interrupted:
+                await self.send("InterruptNotification", {"target_stream_id": interrupted, "stream_key": interrupted, "reason": "user_interrupt", "interrupted_at": time.time()})
+        human = self.new_stream("human_image")
+        human.status = "ended"
+        if not live:
+            await self.send("EchoHumanText", {"stream_key": human.key, "mode": "full_text", "text": question, "end_of_speech": True,
+                                              "attachment": {"type": "image", "source": source}}, request_id)
+        reply = self.new_stream("avatar_text", parent=human.key)
+        self.reply_stream = reply.key
+        events = see(self.brain, image, question, source, self.transport)
+        label = f"[shared a {'camera frame' if source != 'upload' else 'photo'}] {question}".strip()
+        self.reply_task = asyncio.create_task(self.generate(question, reply, events, remember_as=label))
+
+    async def on_set_language(self, payload: dict[str, Any], request_id: str) -> None:
+        if not self.brain:
+            return await self.error("INVALID_SESSION", "Send InitializeAvatarSession first.", request_id)
+        language = payload.get("language")
+        if language not in LANGUAGES:
+            return await self.error("INVALID_MESSAGE", f"Language must be one of: {', '.join(LANGUAGES)}.", request_id)
+        await self.cancel_reply("language_change")
+        self.chosen_language = language
+        base = PERSONAS.get(self.brain.persona.id) or get_persona(None)
+        self.brain.persona = base.localized(language)
+        await self.send("LanguageChanged", {"language": language, "persona": self.brain.persona.public()}, request_id)
+        stream = self.new_stream("avatar_text")
+        await self.signal("stream_begin", stream)
+        text = "Okay, I'll speak English now." if language == "english" else "Sawa, sasa nitazungumza Kiswahili."
+        await self.send("EchoAvatarText", {"stream_key": stream.key, "mode": "full_text", "text": text, "end_of_speech": True})
+        await self.send_speech(stream.key, 0, text, final=True)
+        stream.status = "ended"
+        await self.signal("stream_end", stream)
 
     async def on_interrupt(self, request_id: str) -> None:
         key = await self.cancel_reply("user_interrupt")
@@ -270,15 +359,16 @@ class AvatarSession:
             return await self.error("INVALID_SESSION", "Send InitializeAvatarSession first.", request_id)
         await self.cancel_reply("persona_change")
         environment = self.brain.environment
-        self.brain = BrainContext(persona=get_persona(payload.get("persona")), max_history=self.brain.max_history, environment=environment)
-        await self.on_initialize({"persona": self.brain.persona.id, "context": environment}, request_id)
+        await self.on_initialize({"persona": payload.get("persona"), "context": environment, "language": payload.get("language")}, request_id)
 
     # ------------------------------------------------------------ main loop
     rate: ConnectionRate = field(default_factory=lambda: ConnectionRate(limit=_limit("ESHB_AVATAR_TURNS_PER_MINUTE", 30)))
+    image_rate: ConnectionRate = field(default_factory=lambda: ConnectionRate(limit=_limit("ESHB_AVATAR_IMAGES_PER_MINUTE", 20)))
     transport: Any = None
 
     async def dispatch(self, raw: str) -> None:
-        if len(raw.encode("utf-8")) > MAX_MESSAGE_BYTES:
+        size = len(raw.encode("utf-8"))
+        if size > MAX_IMAGE_MESSAGE_BYTES:
             return await self.error("INVALID_MESSAGE", "Message too large.")
         try:
             message = json.loads(raw)
@@ -292,6 +382,8 @@ class AvatarSession:
             return await self.error("INVALID_MESSAGE", "Expected {header: {name, request_id}, payload}.")
         if name not in CLIENT_MESSAGES:
             return await self.error("INVALID_MESSAGE", f"Unknown message {str(name)[:40]}.", request_id)
+        if size > MAX_MESSAGE_BYTES and name != "SendHumanImage":
+            return await self.error("INVALID_MESSAGE", "Message too large.", request_id)
         if name == "TriggerHeartbeat":
             return await self.send("AvatarHeartbeat", None, request_id)
         if name == "InitializeAvatarSession":
@@ -308,6 +400,10 @@ class AvatarSession:
             return await self.on_update_context(payload)
         if name == "SetPersona":
             return await self.on_set_persona(payload, request_id)
+        if name == "SendHumanImage":
+            return await self.on_human_image(payload, request_id)
+        if name == "SetLanguage":
+            return await self.on_set_language(payload, request_id)
 
     async def run(self) -> None:
         heartbeat = _limit("ESHB_AVATAR_HEARTBEAT_TIMEOUT", 30)

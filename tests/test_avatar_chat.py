@@ -291,7 +291,9 @@ def test_protocol_errors(client):
         assert recv(ws)[1]["code"] == "INVALID_MESSAGE"
         ws.send_text(msg("RemoteShell"))
         assert recv(ws)[1]["code"] == "INVALID_MESSAGE"
-        ws.send_text("x" * 20_000)
+        ws.send_text(msg("SendHumanText", {"text": "x" * 20_000}))
+        assert recv(ws)[1]["message"] == "Message too large."
+        ws.send_text("x" * 8_000_000)
         assert recv(ws)[1]["message"] == "Message too large."
         init(ws)
         ws.send_text(msg("SendHumanText", {"stream_key": "big", "text": "a" * 2001, "end_of_speech": True}))

@@ -1,0 +1,17 @@
+/* Ancient-script web fonts (Noto, SIL Open Font License 1.1 - see OFL.txt).
+   unicode-range means a browser downloads a font only when that script is on screen. */
+@font-face{font-family:"Noto Sans Egyptian Hieroglyphs";font-style:normal;font-weight:400;font-display:swap;
+  src:local("Noto Sans Egyptian Hieroglyphs"),url("/static/fonts/noto-sans-egyptian-hieroglyphs-egyptian-hieroglyphs-400-normal.woff2") format("woff2");
+  unicode-range:U+13000-13455,U+13460-143FA}
+@font-face{font-family:"Noto Sans Cuneiform";font-style:normal;font-weight:400;font-display:swap;
+  src:local("Noto Sans Cuneiform"),url("/static/fonts/noto-sans-cuneiform-cuneiform-400-normal.woff2") format("woff2");
+  unicode-range:U+12000-123FF,U+12400-1246E,U+12470-12474,U+12480-12543}
+@font-face{font-family:"Noto Sans Ethiopic";font-style:normal;font-weight:400;font-display:swap;
+  src:local("Noto Sans Ethiopic"),url("/static/fonts/noto-sans-ethiopic-ethiopic-400-normal.woff2") format("woff2");
+  unicode-range:U+030E,U+1200-1399,U+2D80-2DDE,U+AB01-AB2E,U+1E7E0-1E7FE}
+@font-face{font-family:"Noto Sans Old Italic";font-style:normal;font-weight:400;font-display:swap;
+  src:local("Noto Sans Old Italic"),url("/static/fonts/noto-sans-old-italic-old-italic-400-normal.woff2") format("woff2");
+  unicode-range:U+10300-1032F}
+@font-face{font-family:"Noto Sans Old North Arabian";font-style:normal;font-weight:400;font-display:swap;
+  src:local("Noto Sans Old North Arabian"),url("/static/fonts/noto-sans-old-north-arabian-old-north-arabian-400-normal.woff2") format("woff2");
+  unicode-range:U+10A80-10A9F}

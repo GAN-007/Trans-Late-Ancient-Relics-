@@ -16,7 +16,7 @@
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55;padding-bottom:env(safe-area-inset-bottom)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif,"Noto Sans Egyptian Hieroglyphs","Noto Sans Cuneiform","Noto Sans Ethiopic","Noto Sans Old Italic","Noto Sans Old North Arabian";line-height:1.55;padding-bottom:env(safe-area-inset-bottom)}
 button,input,textarea,select{font:inherit}
 button{min-height:44px;border:0;border-radius:12px;padding:10px 16px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer;touch-action:manipulation}
 button:hover{filter:brightness(.95)}
@@ -122,3 +122,54 @@ dialog{width:min(900px,calc(100vw - 24px));border:1px solid var(--line);border-r
 .avatar-form textarea{min-height:52px;flex:1}
 @media (max-width:900px){.avatar-layout{grid-template-columns:1fr}.avatar-stage{max-height:52vh}.avatar-chat-card{max-height:none;min-height:420px}}
 @media (prefers-reduced-motion:reduce){.avatar-stage[data-state="thinking"] .avatar-state-badge::after{animation:none;content:"…"}}
+
+/* live chat: seeing and reading */
+.avatar-pickers{display:flex;gap:10px;flex-wrap:wrap;flex:1 1 320px;justify-content:flex-end}
+.avatar-pickers label{margin:0;flex:1 1 150px;max-width:260px}
+.avatar-camera{position:absolute;right:12px;top:12px;width:34%;max-width:220px;aspect-ratio:4/3;border-radius:12px;overflow:hidden;border:2px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,.25);background:#111}
+.avatar-camera video{width:100%;height:100%;object-fit:cover;display:block}
+.avatar-live-dot{position:absolute;left:8px;top:8px;background:#c0392b;color:#fff;font-size:.68rem;font-weight:800;letter-spacing:.08em;padding:2px 7px;border-radius:999px}
+.avatar-see-controls{margin-top:8px}
+.avatar-see-controls button{flex:1 1 140px}
+#avatarCameraBtn[aria-pressed="true"],#avatarLiveBtn[aria-pressed="true"]{background:var(--ink);color:#fff}
+.avatar-attach{display:flex;align-items:center;justify-content:center;min-width:48px;min-height:52px;border:1px solid var(--line);border-radius:12px;cursor:pointer;font-size:1.3rem;margin:0;background:#fff}
+.avatar-chat-card.dropping{outline:3px dashed var(--avatar-accent,#c79a2c);outline-offset:-8px}
+.avatar-bubble-image{display:block;max-width:220px;max-height:180px;border-radius:10px;margin:4px 0 6px;object-fit:cover}
+.avatar-reading{align-self:stretch;background:#fffdf7;border:1px solid var(--line);border-left:4px solid var(--avatar-accent,#c79a2c);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.avatar-reading:not(.current){opacity:.8}
+.avatar-reading-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.avatar-reading-translation{font-size:1.08rem;font-weight:700;line-height:1.45}
+.avatar-reading-words{display:flex;flex-wrap:wrap;gap:8px}
+.avatar-word{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:92px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:500;text-align:center;min-height:auto;transition:transform .15s ease,box-shadow .15s ease,background .2s ease}
+.avatar-word:hover{border-color:var(--avatar-accent,#c79a2c)}
+.avatar-word.active{background:#fff4d6;border-color:var(--avatar-accent,#c79a2c);box-shadow:0 0 0 3px rgba(199,154,44,.35);transform:translateY(-2px)}
+.avatar-word.right{background:#dcefe3;border-color:var(--success)}
+.avatar-word.wrong{background:#f6dede;border-color:var(--danger)}
+.avatar-word.status-model_reading,.avatar-word.status-disputed{border-style:dashed}
+.avatar-word.status-sign_only{opacity:.75}
+.avatar-word-glyphs{font-size:1.9rem;line-height:1.3;font-family:"Noto Sans Egyptian Hieroglyphs","Noto Sans Cuneiform","Noto Sans Ethiopic","Abyssinica SIL","Noto Sans Old Italic","Noto Sans Old North Arabian","Noto Naskh Arabic","Segoe UI Historic",serif}
+.avatar-word-translit{font-weight:800;font-size:.92rem}
+.avatar-word-say{font-style:italic;font-size:.85rem;color:var(--muted)}
+.avatar-word-meaning{font-size:.85rem}
+.avatar-reading-signs summary{cursor:pointer;font-weight:700;font-size:.9rem}
+.avatar-sign-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.avatar-sign{display:inline-flex;flex-direction:column;align-items:center;border:1px solid var(--line);border-radius:10px;padding:4px 8px;background:#fff;max-width:150px;text-align:center}
+.avatar-sign b{font-size:1.5rem;font-weight:400;font-family:"Noto Sans Egyptian Hieroglyphs","Noto Sans Cuneiform","Noto Sans Ethiopic","Noto Sans Old Italic","Noto Sans Old North Arabian","Segoe UI Historic",serif}
+.avatar-sign small{font-size:.72rem;color:var(--muted)}
+.avatar-sign em{font-size:.7rem;font-style:normal;line-height:1.2}
+.avatar-reading-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:900px){.avatar-camera{width:38%}.avatar-pickers{justify-content:flex-start}.avatar-pickers label{max-width:none}}
+@media (prefers-reduced-motion:reduce){.avatar-word{transition:none}.avatar-word.active{transform:none}}
+button,input,textarea,select{font-family:inherit}
+/* word board: the teacher holds up the word being read */
+.avatar-board{position:absolute;left:12px;top:52px;max-width:55%;background:rgba(255,253,247,.96);border:2px solid var(--avatar-accent,#c79a2c);border-radius:14px;padding:10px 14px;box-shadow:0 8px 22px rgba(0,0,0,.18);display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.avatar-board[hidden]{display:none}
+.avatar-board-glyphs{font-size:clamp(2rem,5vw,3.2rem);line-height:1.2;overflow-wrap:anywhere}
+.avatar-board-translit{font-weight:800}
+.avatar-board-hint{font-size:.8rem;color:var(--muted)}
+.avatar-board.right{border-color:var(--success);background:#eaf6ee}
+.avatar-board.wrong{border-color:var(--danger);background:#fbeaea}
+.avatar-reading.quiz .avatar-word:not(.answered) .avatar-word-translit,
+.avatar-reading.quiz .avatar-word:not(.answered) .avatar-word-say,
+.avatar-reading.quiz .avatar-word:not(.answered) .avatar-word-meaning{visibility:hidden}
+.avatar-reading.quiz .avatar-reading-signs{display:none}

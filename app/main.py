@@ -113,6 +113,12 @@ async def lifespan(app: FastAPI):
         task = asyncio.create_task(background_loop(stop_event))
     app.state.knowledge_stop = stop_event
     app.state.knowledge_task = task
+    warm = None
+    if env_bool("ESHB_WARMUP", True):
+        # Build translation and reading indexes off the request path so the first chat answers instantly.
+        from .avatar_chat.reading import warm_up
+        warm = asyncio.create_task(asyncio.to_thread(warm_up))
+    app.state.warmup_task = warm
     try:
         yield
     finally:

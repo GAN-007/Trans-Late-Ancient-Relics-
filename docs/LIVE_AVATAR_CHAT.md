@@ -22,11 +22,37 @@ OpenAvatarChat chains handlers (VAD → ASR → LLM → TTS → Avatar) on GPU s
 
 Every frame is JSON: `{"header": {"name", "request_id"}, "payload": {...}}`.
 
-Client → server: `InitializeAvatarSession {persona, context}`, `SendHumanText {stream_key, mode: increment|full_text, text, end_of_speech}`, `Interrupt`, `TriggerHeartbeat`, `EndSpeech {stream_key}`, `UpdateContext {...}`, `SetPersona {persona}`.
+Client → server: `InitializeAvatarSession {persona, language, context}`, `SendHumanText {stream_key, mode: increment|full_text, text, end_of_speech}`, `SendHumanImage {image (data URL), text, source: upload|camera|live}`, `Interrupt`, `TriggerHeartbeat`, `EndSpeech {stream_key}`, `UpdateContext {...}`, `SetPersona {persona, language}`, `SetLanguage {language}`.
 
-Server → client: `AvatarSessionInitialized`, `EchoHumanText`, `EchoAvatarText` (streamed increments), `AvatarSpeech {text, voice, motion, end_of_speech}`, `AvatarCard` (verified translation table), `AvatarNotice`, `ChatSignal` (stream_begin / stream_end / stream_cancel), `InterruptAccepted`, `InterruptNotification`, `AvatarHeartbeat`, `Error {code, message}`.
+Server → client: `AvatarSessionInitialized` (includes `vision` availability and `languages`), `EchoHumanText` (with `attachment` for images), `EchoAvatarText` (streamed increments), `AvatarSpeech {text, voice, motion, segment, end_of_speech}`, `AvatarReading {reading}`, `AvatarCard` (verified translation table), `AvatarLiveStatus` (busy / throttled / unchanged), `LanguageChanged`, `AvatarNotice`, `ChatSignal` (stream_begin / stream_end / stream_cancel), `InterruptAccepted`, `InterruptNotification`, `AvatarHeartbeat`, `Error {code, message}`.
 
 `AvatarSpeech.motion` is `{channels, fps, duration, frames: [{t, v, w}]}`, where `w` holds ARKit blendshape weights such as `jawOpen`, `mouthFunnel` and `mouthPucker`. A renderer for a 3D or Gaussian-splat head can consume the same frames.
+
+## Reading what you show it, like a teacher with a book
+
+Show the guide writing in any of three ways:
+
+- **Camera**: press *Camera* and then *Read what I see*, or just ask "what does this say?" while the camera is on.
+- **Live reading**: the browser compares tiny frames and sends one only when the view has changed and then held still for a moment. The guide reads new text as it comes into view, never interrupts itself, and stays quiet when the scene hasn't changed.
+- **A photo or pasted text**: attach, paste or drop a photo, or paste hieroglyphs, cuneiform, Ge'ez fidel, Old Italic, Safaitic or Arabic letters straight into the chat. Pasted text is read fully offline.
+
+Every reading is taught the same way, in the learner's chosen language (English or Kiswahili):
+
+1. What the script and language are, and which way to read. On a wall, the direction comes from the way the signs face.
+2. The whole meaning.
+3. Word by word: how to say it (Egyptological convention: *nfr* → "nefer", *ꜥnḫ* → "ankh"), what it means, and what each sign does (sound sign, word sign, helper sign, or a meaning marker you don't say aloud).
+
+The reading card highlights each word as the guide reads it, and a word board on the stage holds up the current word. Tap any word to hear it explained again.
+
+**Tutor mode.** Say *quiz me* (*nijaribu*). The guide points at each word, asks you to say it and then what it means, accepts close answers (speech recognition mishears ancient words), gives a hint and then the answer, and keeps score. The card hides its answers until the quiz ends. *Read it again*, *word 3*, *slower* / *faster* and *stop* (*soma tena*, *neno la 3*, *polepole*, *acha*) work at any time.
+
+**How readings are checked.** Pasted and detected signs are read from deterministic data: Unicode sign names, the Gardiner sign catalog, the Middle Egyptian lexicon and the ancient-language ladder (which also parses whole sentences). A vision model's reading of a photo is compared word by word with the same data, and each word is marked *confirmed*, *disputed* or *read from photo*. The guide says aloud when something is only likely. With the on-device sign detector and a vision model both available, disagreements are pointed out.
+
+| Needs | Pasted text | Photo / camera |
+|---|---|---|
+| Nothing configured | Works | Explains it can't see yet |
+| On-device ONNX sign detector | Works | Reads detected hieroglyphs |
+| Vision model (`OPENAI_API_KEY`) | Works | Reads any script, checked against the data above |
 
 ## The guide's answers
 
@@ -38,7 +64,14 @@ Every turn first runs grounding tools:
 
 Tool results go into the prompt's environment layer so the model repeats verified forms instead of inventing them, and a card with every script appears in the chat. Without a model, the guide answers from these tools directly and says plainly that open conversation needs a model.
 
-Personas: **Nefer** (English, scribe), **Amani** (Swahili teacher) and **Theo** (English, historical linguist). Each has its own voice language, rate, pitch and look.
+Personas: **Nefer** (scribe), **Amani** (teacher) and **Theo** (historical linguist). Each has its own voice, pitch and look and can speak English or Kiswahili. The learner's language choice is kept when switching guides.
+
+## Speed
+
+- Speech starts on the first finished sentence; a photo turn starts with a spoken "let me take a close look" while the image is read.
+- Photos and frames are resized in the browser to at most 1280 px JPEG before upload.
+- Translation and reading indexes are built in a background thread at startup (`ESHB_WARMUP`). The first reading then takes under a millisecond instead of about a second.
+- Ancient-script fonts (Noto, OFL) are bundled and downloaded only when that script appears on screen, then cached for offline use.
 
 ## Configuration
 
@@ -54,7 +87,7 @@ The other limits are listed in [CONFIGURATION.md](CONFIGURATION.md).
 
 ## Privacy
 
-Audio never leaves the browser. Only recognized text is sent. Conversations live in server memory for the length of the session and are not stored.
+Audio never leaves the browser. Only recognized text is sent. Photos and camera frames are analyzed in memory and not stored. Conversations live in server memory for the length of the session and are not stored.
 
 ## Limits
 
