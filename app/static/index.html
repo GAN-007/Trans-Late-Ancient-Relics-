@@ -34,6 +34,7 @@
 <nav id="tabs" class="tabs" aria-label="Main sections">
   <button data-tab="translate" class="active">Translate</button>
   <button data-tab="ladder">Ancient Ladder</button>
+  <button data-tab="avatar">Live Chat</button>
   <button data-tab="lens">Live Lens</button>
   <button data-tab="talk">Talk</button>
   <button data-tab="learn">Learn</button>
@@ -204,6 +205,85 @@
       </article>
     </div>
     <div id="ladderResults" class="ladder-results" aria-live="polite"></div>
+  </section>
+
+  <section id="avatar" class="tab" aria-labelledby="avatarTitle">
+    <div class="avatar-layout">
+      <article class="card avatar-stage-card">
+        <div class="avatar-head-row">
+          <div>
+            <div class="section-kicker">LIVE AVATAR CHAT</div>
+            <h2 id="avatarTitle">Talk with a guide</h2>
+          </div>
+          <label for="avatarPersona" class="avatar-persona-label">Guide
+            <select id="avatarPersona"></select>
+          </label>
+        </div>
+        <div class="avatar-stage" id="avatarStage" data-state="offline">
+          <svg id="avatarSvg" viewBox="0 0 400 440" role="img" aria-labelledby="avatarSvgTitle">
+            <title id="avatarSvgTitle">Animated guide</title>
+            <defs>
+              <radialGradient id="avatarGlow" cx="50%" cy="38%" r="60%"><stop offset="0%" stop-color="var(--avatar-accent,#c79a2c)" stop-opacity=".28"/><stop offset="100%" stop-color="var(--avatar-accent,#c79a2c)" stop-opacity="0"/></radialGradient>
+            </defs>
+            <circle cx="200" cy="200" r="190" fill="url(#avatarGlow)"/>
+            <g id="avatarBody">
+              <path id="avatarShoulders" d="M70 440 C80 360 140 338 200 338 C260 338 320 360 330 440 Z"/>
+              <rect id="avatarNeck" x="172" y="282" width="56" height="70" rx="22"/>
+              <path id="avatarCollar" d="M120 380 C150 356 175 352 200 366 C225 352 250 356 280 380 L268 404 C245 386 222 384 200 398 C178 384 155 386 132 404 Z"/>
+            </g>
+            <g id="avatarHead">
+              <path id="avatarHairBack" d="M96 196 C92 112 140 64 200 64 C260 64 308 112 304 196 L306 300 C270 318 130 318 94 300 Z"/>
+              <ellipse id="avatarFace" cx="200" cy="196" rx="88" ry="108"/>
+              <ellipse class="avatar-ear" cx="112" cy="206" rx="12" ry="22"/>
+              <ellipse class="avatar-ear" cx="288" cy="206" rx="12" ry="22"/>
+              <path id="avatarHairFront" d="M112 168 C120 108 160 84 200 84 C240 84 280 108 288 168 C262 140 238 128 200 128 C162 128 138 140 112 168 Z"/>
+              <path id="avatarHeadwear" d=""/>
+              <g id="avatarBrows">
+                <path id="avatarBrowL" d="M146 160 Q166 150 186 158"/>
+                <path id="avatarBrowR" d="M214 158 Q234 150 254 160"/>
+              </g>
+              <g id="avatarEyes">
+                <g id="avatarEyeL"><ellipse class="avatar-eye-white" cx="166" cy="186" rx="17" ry="11"/><circle class="avatar-iris" cx="166" cy="186" r="7.5"/><circle class="avatar-glint" cx="169" cy="183" r="2"/><path class="avatar-lid" d="M148 178 Q166 168 184 178"/></g>
+                <g id="avatarEyeR"><ellipse class="avatar-eye-white" cx="234" cy="186" rx="17" ry="11"/><circle class="avatar-iris" cx="234" cy="186" r="7.5"/><circle class="avatar-glint" cx="237" cy="183" r="2"/><path class="avatar-lid" d="M216 178 Q234 168 252 178"/></g>
+              </g>
+              <path id="avatarNose" d="M201 198 Q197 214 193 224 M189 229 Q200 236 211 229"/>
+              <g id="avatarMouth">
+                <path id="avatarMouthInner" d=""/>
+                <path id="avatarTeeth" d=""/>
+                <path id="avatarTongue" d=""/>
+                <path id="avatarLipUpper" d=""/>
+                <path id="avatarLipLower" d=""/>
+              </g>
+              <ellipse class="avatar-cheek" cx="146" cy="236" rx="18" ry="10"/>
+              <ellipse class="avatar-cheek" cx="254" cy="236" rx="18" ry="10"/>
+            </g>
+          </svg>
+          <div class="avatar-state-badge" id="avatarStateBadge" aria-live="polite">Connecting…</div>
+          <div class="avatar-subtitle" id="avatarSubtitle" aria-live="polite"></div>
+        </div>
+        <div class="avatar-controls">
+          <button id="avatarMicBtn" class="avatar-mic" aria-pressed="false" disabled><span aria-hidden="true">🎙</span><span id="avatarMicLabel">Start talking</span></button>
+          <button id="avatarInterruptBtn" class="secondary" disabled>Stop speaking</button>
+          <button id="avatarMuteBtn" class="secondary" aria-pressed="false">Mute voice</button>
+        </div>
+        <div class="avatar-options">
+          <label class="check-label"><input id="avatarBargeIn" type="checkbox" checked> Interrupt by speaking</label>
+          <label class="check-label"><input id="avatarSubtitles" type="checkbox" checked> Subtitles</label>
+        </div>
+        <p class="microcopy" id="avatarStatus" role="status">Speech is recognized and spoken by your browser; only the recognized text is sent.</p>
+      </article>
+      <article class="card avatar-chat-card">
+        <div class="section-kicker">CONVERSATION</div>
+        <div id="avatarRecords" class="avatar-records" aria-live="polite" aria-label="Conversation with the guide"></div>
+        <form id="avatarForm" class="avatar-form" autocomplete="off">
+          <label for="avatarInput" class="sr-only">Message</label>
+          <textarea id="avatarInput" rows="2" maxlength="2000" placeholder="Ask anything, e.g. How do you say “the king made a great house” in Sumerian?"></textarea>
+          <button id="avatarSendBtn" type="submit" disabled>Send</button>
+        </form>
+        <div class="ladder-examples" id="avatarSuggestions" aria-label="Suggested questions"></div>
+        <p class="microcopy" id="avatarModelNote"></p>
+      </article>
+    </div>
   </section>
 
   <section id="lens" class="tab" aria-labelledby="lensTitle">
