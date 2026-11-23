@@ -30,6 +30,16 @@ All secrets are server-side environment variables. The browser never receives AP
 | `ESHB_AVATAR_CONNECTION_TTL` | 900 | maximum chat length in seconds |
 | `ESHB_AVATAR_HISTORY_TURNS` | 20 | dialogue turns kept in memory for the model |
 | `ESHB_AVATAR_IMAGES_PER_MINUTE` | 20 | photos and camera frames per minute per chat |
+| `ESHB_TTS_PROVIDER` | `browser` | guide voice: `browser`, `openai` or `azure` |
+| `ESHB_TTS_MODEL` | `gpt-4o-mini-tts` | OpenAI speech model (`tts-1` ignores intonation instructions); OpenAI plans to retire these on 2027-01-06 |
+| `ESHB_TTS_VOICE` | per guide | override the OpenAI voice (Nefer `coral`, Amani `sage`, Theo `ash`) |
+| `ESHB_TTS_API_KEY` | `OPENAI_API_KEY` | key for the OpenAI-compatible speech endpoint |
+| `ESHB_TTS_BASE_URL` | `ESHB_AI_BASE_URL` | OpenAI-compatible speech endpoint |
+| `AZURE_SPEECH_KEY` | — | Azure AI Speech key |
+| `AZURE_SPEECH_REGION` | — | Azure region, e.g. `westeurope` |
+| `AZURE_SPEECH_ENDPOINT` | from region | full Azure TTS endpoint (overrides region) |
+| `ESHB_AZURE_VOICE_<LANGUAGE>` | built in | Azure voice per learner language, e.g. `ESHB_AZURE_VOICE_SWAHILI=sw-KE-RafikiNeural` |
+| `ESHB_AZURE_VOICE_THEO` | `en-GB-RyanNeural` | Theo's English Azure voice |
 | `ESHB_WARMUP` | true | build translation and reading indexes in the background at startup |
 
 ## Production

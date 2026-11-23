@@ -7,7 +7,8 @@ export function speechRecognitionSupported() {
 export function createRecognizer({language='english', onInterim, onFinal, onStatus, onError, onEnd}) {
   if (!SpeechRecognitionCtor) return null;
   const recognition = new SpeechRecognitionCtor();
-  recognition.lang = language === 'swahili' ? 'sw-KE' : 'en-US';
+  // Accept a BCP-47 code (fr-FR, zh-CN ...) as well as the app's 'english' / 'swahili' names.
+  recognition.lang = /^[a-z]{2,3}-[A-Za-z]{2,4}$/.test(language) ? language : language === 'swahili' ? 'sw-KE' : 'en-US';
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.maxAlternatives = 3;

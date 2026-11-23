@@ -144,11 +144,12 @@ def test_llm_responses_api_streaming(monkeypatch):
     seen: list[httpx.Request] = []
     ctx = BrainContext(persona=get_persona("nefer"))
     events = _collect(think(ctx, "How do you say water in Latin?", responses_transport(["Aqua ", "is water."], seen)))
-    assert events[0]["type"] == "card"
     assert "".join(e["text"] for e in events if e["type"] == "delta") == "Aqua is water."
     body = json.loads(seen[0].content)
     assert seen[0].url.path.endswith("/responses") and body["stream"] is True
-    assert "aqua" in body["instructions"] and seen[0].headers["authorization"] == "Bearer sk-test"
+    assert seen[0].headers["authorization"] == "Bearer sk-test"
+    assert {tool["name"] for tool in body["tools"]} >= {"translate_ancient", "read_script", "teach_phrase", "app_action"}
+    assert "English" in body["instructions"]  # the learner's language is in the prompt
 
 
 def test_llm_chat_completions_api(monkeypatch):

@@ -28,7 +28,7 @@ from ..ancient.lexicon import english_index
 from ..ancient.parsing import parse
 from . import reading as reading_mod
 from . import tutor
-from .personas import LANGUAGES, Persona
+from .personas import FULL_OFFLINE_LANGUAGES, LANGUAGES, Persona
 
 # ------------------------------------------------------------------ language names
 LANGUAGE_WORDS: dict[str, str] = {
@@ -101,6 +101,7 @@ class BrainContext:
     quiz: tutor.Quiz | None = None
     rate_scale: float = 1.0  # learner can ask the guide to speak slower or faster
     live_signature: str = ""  # last live-camera reading, so an unchanged scene is not re-read
+    language_notice_given: bool = False
 
     @property
     def language(self) -> str:
@@ -291,10 +292,14 @@ def offline_reply(text: str, persona: Persona, tools: list[ToolResult]) -> str:
 
 
 # ------------------------------------------------------------------ prompt compiler (4 layers)
-L1_CORE = """You are a live, talking avatar inside a translation app. Everything you write is spoken aloud by text-to-speech and lip-synced.
+L1_CORE = """You are a live, talking avatar inside a translation and language-learning app: the learner's teacher and their way into everything the app can do.
+Everything you write is spoken aloud by text-to-speech and lip-synced to your face, so talk like a person, not a document.
+You have tools for the whole platform: verified ancient-language translation, reading native scripts as lessons, modern translation,
+dictionaries, lesson cards for any language, quizzes, and app actions (open the camera, read what the camera sees, switch tabs).
+Use them instead of guessing. Teach the way a good teacher does: one idea at a time, check understanding, encourage, and invite practice.
 Rules:
 - Reply in one to three short, natural spoken sentences. No markdown, lists, tables, emojis or code.
-- Reply in the same language the user writes in (English or Swahili) unless asked otherwise.
+- Reply in the learner's chosen language (given below) unless they ask for another; when teaching a language, give its words in that language with pronunciation.
 - When <environment-state> contains verified translations or word facts, use exactly those forms and never invent other ancient forms.
 - If a form is composed, reconstructed or hypothetical, say so briefly. If you do not know, say so.
 - The app shows a card with every script; you do not need to read cuneiform, hieroglyphs or fidel letter by letter."""
@@ -427,7 +432,7 @@ async def think(ctx: BrainContext, user_text: str, transport: httpx.AsyncBaseTra
     """Yield {'type':'card'|'reading'|'say'|'delta'|'notice', ...} events for one user turn."""
     lesson = lesson_turn(ctx, user_text)
     if lesson is not None:
-        for event in lesson:
+        for event in await localize_events(lesson, ctx, transport):
             yield event
         return
     tools = run_tools(user_text, ctx.persona)
@@ -440,15 +445,12 @@ async def think(ctx: BrainContext, user_text: str, transport: httpx.AsyncBaseTra
         for chunk in re.findall(r"\S+\s*", reply):
             yield {"type": "delta", "text": chunk}
         return
-    for tool in tools:
-        if tool.card:
-            yield {"type": "card", "card": tool.card}
-    system, messages = compile_prompt(ctx, user_text, tools)
+    system, messages = compile_prompt(ctx, user_text, [])
     produced = False
     try:
-        async for delta in stream_llm(system, messages, transport):
-            produced = True
-            yield {"type": "delta", "text": delta}
+        async for event in run_agent(ctx, system, messages, transport):
+            produced = produced or event["type"] in {"delta", "say"}
+            yield event
     except Exception as exc:  # network, auth or model failure -> honest offline answer
         if produced:
             yield {"type": "notice", "text": f"The language model stopped early: {exc}"}
@@ -529,16 +531,167 @@ async def see(ctx: BrainContext, image_data_url: str, question: str = "", source
         return
     ctx.live_signature = signature
     ctx.lesson, ctx.quiz = reading, None
-    yield {"type": "reading", "reading": reading}
-    for line in reading_mod.narrate(reading, lang, detail="short" if live else "full"):
-        yield {"type": "say", **line}
+    narration = [{"type": "reading", "reading": reading}]
+    narration += [{"type": "say", **line} for line in reading_mod.narrate(reading, lang, detail="short" if live else "full")]
     if live:
-        yield {"type": "say", "segment": None, "text": "Say read it to me and I'll teach it word by word." if en
-               else "Sema nisomee nami nitakufundisha neno kwa neno."}
+        narration.append({"type": "say", "segment": None, "text": "Say read it to me and I'll teach it word by word." if en
+                          else "Sema nisomee nami nitakufundisha neno kwa neno."})
+    for event in await localize_events(narration, ctx, transport):
+        yield event
     if question and not GENERIC_QUESTION.match(question) and llm_status()["configured"]:
         system, messages = compile_prompt(ctx, question, [])
         try:
-            async for delta in stream_llm(system, messages, transport):
-                yield {"type": "delta", "text": delta}
+            async for event in run_agent(ctx, system, messages, transport):
+                yield event
         except Exception as exc:
             yield {"type": "notice", "text": f"The language model could not answer the follow-up: {exc}"}
+
+
+# ------------------------------------------------------------------ agent loop: the model can use the whole platform
+MAX_TOOL_ROUNDS = 4
+
+
+def _model_request(status: dict[str, Any], system: str, items: list[dict[str, Any]], use_tools: bool) -> tuple[str, dict[str, Any]]:
+    from .tools import chat_tools, responses_tools
+    if status["api"] == "chat_completions":
+        body: dict[str, Any] = {"model": status["model"], "stream": True, "messages": [{"role": "system", "content": system}, *items]}
+        if use_tools:
+            body["tools"] = chat_tools()
+        return f"{status['base_url']}/chat/completions", body
+    body = {"model": status["model"], "stream": True, "instructions": system, "input": items}
+    if use_tools:
+        body["tools"] = responses_tools()
+    return f"{status['base_url']}/responses", body
+
+
+async def _stream_round(url: str, body: dict[str, Any], api: str, transport: httpx.AsyncBaseTransport | None) -> AsyncIterator[tuple[str, Any]]:
+    """Yield ('text', delta) and finally ('calls', [{'call_id','name','arguments'}])."""
+    key = os.environ.get("ESHB_AVATAR_LLM_API_KEY") or os.environ.get("OPENAI_API_KEY") or ""
+    headers = {"Content-Type": "application/json"}
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
+    timeout = httpx.Timeout(float(os.environ.get("ESHB_AVATAR_LLM_TIMEOUT_SECONDS", "45")), connect=10.0)
+    calls: dict[Any, dict[str, Any]] = {}
+    async with httpx.AsyncClient(timeout=timeout, transport=transport or DEFAULT_TRANSPORT) as client:
+        async with client.stream("POST", url, headers=headers, json=body) as response:
+            if response.status_code >= 400:
+                detail = (await response.aread()).decode("utf-8", "replace")[:300]
+                raise RuntimeError(f"Language model returned HTTP {response.status_code}: {detail}")
+            async for line in response.aiter_lines():
+                if not line.startswith("data:"):
+                    continue
+                data = line[5:].strip()
+                if not data or data == "[DONE]":
+                    continue
+                try:
+                    event = json.loads(data)
+                except json.JSONDecodeError:
+                    continue
+                if api == "chat_completions":
+                    for choice in event.get("choices") or []:
+                        delta = choice.get("delta") or {}
+                        if delta.get("content"):
+                            yield "text", delta["content"]
+                        for call in delta.get("tool_calls") or []:
+                            slot = calls.setdefault(call.get("index", 0), {"call_id": "", "name": "", "arguments": ""})
+                            if call.get("id"):
+                                slot["call_id"] = call["id"]
+                            function = call.get("function") or {}
+                            if function.get("name"):
+                                slot["name"] = function["name"]
+                            slot["arguments"] += function.get("arguments") or ""
+                    continue
+                kind = event.get("type")
+                if kind == "response.output_text.delta" and event.get("delta"):
+                    yield "text", event["delta"]
+                elif kind == "response.output_item.done" and (event.get("item") or {}).get("type") == "function_call":
+                    item = event["item"]
+                    calls[item.get("id") or item.get("call_id")] = {"call_id": item.get("call_id"), "name": item.get("name"),
+                                                                     "arguments": item.get("arguments") or "{}"}
+                elif kind in {"response.failed", "error"}:
+                    raise RuntimeError(str(event.get("error") or event.get("response", {}).get("error") or "model error"))
+    yield "calls", [c for c in calls.values() if c.get("name")]
+
+
+async def run_agent(ctx: "BrainContext", system: str, messages: list[dict[str, str]],
+                    transport: httpx.AsyncBaseTransport | None = None, use_tools: bool = True) -> AsyncIterator[dict[str, Any]]:
+    """Stream the model's reply; run any platform tools it calls and continue until it answers."""
+    from .tools import execute
+    status = llm_status()
+    api = status["api"]
+    items: list[dict[str, Any]] = [dict(m) for m in messages]
+    for round_number in range(MAX_TOOL_ROUNDS + 1):
+        url, body = _model_request(status, system, items, use_tools and round_number < MAX_TOOL_ROUNDS)
+        calls: list[dict[str, Any]] = []
+        async for kind, value in _stream_round(url, body, api, transport):
+            if kind == "text":
+                yield {"type": "delta", "text": value}
+            else:
+                calls = value
+        if not calls:
+            return
+        if api == "chat_completions":
+            items.append({"role": "assistant", "content": None, "tool_calls": [
+                {"id": c["call_id"], "type": "function", "function": {"name": c["name"], "arguments": c["arguments"]}} for c in calls]})
+        quiz_started = False
+        for call in calls:
+            yield {"type": "tool", "name": call["name"]}
+            outcome = await execute(ctx, call["name"], call["arguments"])
+            for event in outcome.events:
+                yield event
+            quiz_started = quiz_started or (call["name"] == "start_quiz" and outcome.output.get("ok"))
+            output = json.dumps(outcome.output, ensure_ascii=False)[:8000]
+            if api == "chat_completions":
+                items.append({"role": "tool", "tool_call_id": call["call_id"], "content": output})
+            else:
+                items.append({"type": "function_call", "call_id": call["call_id"], "name": call["name"], "arguments": call["arguments"]})
+                items.append({"type": "function_call_output", "call_id": call["call_id"], "output": output})
+        if quiz_started:
+            return  # the quiz question was already spoken; the learner answers next
+
+
+# ------------------------------------------------------------------ explaining in any learner language
+async def localize_events(events: list[dict[str, Any]], ctx: "BrainContext",
+                          transport: httpx.AsyncBaseTransport | None = None) -> list[dict[str, Any]]:
+    """Translate spoken lesson lines (written in English) into the learner's language, keeping word tags."""
+    language = ctx.language
+    says = [e for e in events if e["type"] == "say"]
+    if language in FULL_OFFLINE_LANGUAGES or not says:
+        return events
+    texts = [e["text"] for e in says]
+    translated: list[str] | None = None
+    from ..universal_translation import TranslationError, UniversalTranslationRequest, _provider_status, universal_translate
+    if any(p["configured"] for p in _provider_status().values()):
+        try:
+            result = await universal_translate(UniversalTranslationRequest(
+                text=json.dumps([{"text": t} for t in texts], ensure_ascii=False), source_language="en",
+                target_language=LANGUAGES[language]["mt"], format="json"))
+            translated = [item["text"] for item in json.loads(result["translation"])]
+        except (TranslationError, ValueError, KeyError, TypeError):
+            translated = None
+    if translated is None and llm_status()["configured"]:
+        system = ("Translate each line into " + LANGUAGES[language]["label"] + " for a language learner. Keep ancient words, "
+                  "transliterations and pronunciations exactly as written. Reply with ONLY a JSON array of strings, same length and order.")
+        try:
+            chunks = [value async for kind, value in _stream_round(*_model_request(llm_status(), system,
+                      [{"role": "user", "content": json.dumps(texts, ensure_ascii=False)}], False), llm_status()["api"], transport)
+                      if kind == "text"]
+            candidate = json.loads(re.sub(r"^```(?:json)?|```$", "", "".join(chunks).strip()).strip())
+            if isinstance(candidate, list) and len(candidate) == len(texts):
+                translated = [str(x) for x in candidate]
+        except Exception:
+            translated = None
+    if translated is None or len(translated) != len(texts):
+        if not ctx.language_notice_given:
+            ctx.language_notice_given = True
+            label = LANGUAGES[language]["label"]
+            return [{"type": "notice", "text": f"Explaining in English: lessons in {label} need a language model or translation provider."}] + events
+        return events
+    out, index = [], 0
+    for event in events:
+        if event["type"] == "say":
+            out.append({**event, "text": translated[index]})
+            index += 1
+        else:
+            out.append(event)
+    return out

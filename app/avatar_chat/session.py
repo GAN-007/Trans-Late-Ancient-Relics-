@@ -33,6 +33,7 @@ from .brain import BrainContext, _vision_backends, llm_status, see, think
 from .personas import LANGUAGES, PERSONAS, get_persona
 from .text_tools import SentenceBuffer, speakable
 from .visemes import motion_track
+from .voice import emotion_for, synthesize, tts_status
 
 MAX_MESSAGE_BYTES = 16_000
 MAX_IMAGE_MESSAGE_BYTES = 7_500_000  # a 5 MB image as a base64 data URL
@@ -91,6 +92,8 @@ class AvatarSession:
     last_seen: float = field(default_factory=time.monotonic)
     initialized: bool = False
     chosen_language: str | None = None  # set only when the learner picks a language explicitly
+    speech_tail: asyncio.Task | None = None  # last queued sentence delivery (server voice keeps order)
+    speech_tasks: list = field(default_factory=list)
 
     # ------------------------------------------------------------ sending
     async def send(self, name: str, payload: dict[str, Any] | None = None, request_id: str | None = None) -> None:
@@ -122,7 +125,23 @@ class AvatarSession:
                 self.streams.pop(old, None)
         return stream
 
+    async def flush_speech(self) -> None:
+        if self.speech_tail is not None:
+            try:
+                await self.speech_tail
+            except Exception:
+                pass
+        self.speech_tail = None
+        self.speech_tasks = [t for t in self.speech_tasks if not t.done()]
+
+    def drop_speech(self) -> None:
+        for task in self.speech_tasks:
+            task.cancel()
+        self.speech_tasks = []
+        self.speech_tail = None
+
     async def cancel_reply(self, reason: str) -> str | None:
+        self.drop_speech()
         key = self.reply_stream
         task = self.reply_task
         if not key or not task or task.done():
@@ -160,6 +179,7 @@ class AvatarSession:
             "language": persona.language,
             "languages": [{"id": key, "label": value["label"], "asr": value["asr"]} for key, value in LANGUAGES.items()],
             "vision": dict(zip(("on_device_detector", "vision_model"), _vision_backends())),
+            "voice": tts_status(),
             "limits": {"heartbeat_timeout": _limit("ESHB_AVATAR_HEARTBEAT_TIMEOUT", 30),
                        "connection_ttl": _limit("ESHB_AVATAR_CONNECTION_TTL", 900), "max_text": MAX_HUMAN_TEXT},
         }, request_id)
@@ -172,6 +192,7 @@ class AvatarSession:
         text = self.brain.persona.greeting
         await self.send("EchoAvatarText", {"stream_key": stream.key, "mode": "full_text", "text": text, "end_of_speech": True})
         await self.send_speech(stream.key, 0, text, final=True)
+        await self.flush_speech()
         stream.status = "ended"
         await self.signal("stream_end", stream)
 
@@ -185,16 +206,40 @@ class AvatarSession:
             return
         persona = self.brain.persona
         rate = round(persona.voice_rate * self.brain.rate_scale, 2)
+        emotion = emotion_for(spoken, {"segment": segment, **(extra or {})})
         payload: dict[str, Any] = {
             "stream_key": stream_key, "index": index, "text": spoken, "end_of_speech": final,
             "voice": {"lang": persona.voice_lang, "rate": rate, "pitch": persona.voice_pitch},
-            "motion": motion_track(spoken, rate),
+            "motion": motion_track(spoken, rate), "emotion": emotion,
         }
         if segment is not None:
             payload["segment"] = segment
         if extra:
             payload.update(extra)
-        await self.send("AvatarSpeech", payload)
+        if not tts_status()["server_audio"]:
+            await self.send("AvatarSpeech", payload)
+            return
+        # Server voice: synthesize every sentence at once, deliver strictly in order.
+        audio_task = asyncio.create_task(synthesize(spoken, persona, self.brain.language, emotion, rate))
+        previous = self.speech_tail
+
+        async def deliver() -> None:
+            if previous is not None:
+                try:
+                    await previous
+                except Exception:
+                    pass
+            try:
+                audio = await audio_task
+                if audio:
+                    payload.update(audio)
+            except Exception as exc:  # fall back to the browser voice for this sentence
+                payload["voice_error"] = str(exc)[:200]
+            await self.send("AvatarSpeech", payload)
+
+        self.speech_tail = asyncio.create_task(deliver())
+        self.speech_tasks.append(self.speech_tail)
+        self.speech_tasks.append(audio_task)
 
     async def on_human_text(self, payload: dict[str, Any], request_id: str) -> None:
         if not self.brain:
@@ -248,6 +293,10 @@ class AvatarSession:
                     spoken_index += 1
                 elif event["type"] == "reading":
                     await self.send("AvatarReading", {"stream_key": stream.key, "reading": event["reading"]})
+                elif event["type"] == "action":
+                    await self.send("AvatarAction", {"stream_key": stream.key, "action": event["action"], "tab": event.get("tab")})
+                elif event["type"] == "tool":
+                    await self.send("AvatarToolUse", {"stream_key": stream.key, "tool": event["name"]})
                 elif event["type"] in {"live_unchanged", "live_unavailable"}:
                     await self.send("AvatarLiveStatus", {"stream_key": stream.key, "status": event["type"]})
                 elif event["type"] == "card":
@@ -266,6 +315,7 @@ class AvatarSession:
                 spoken_index += 1
             if not rest:
                 await self.send("AvatarSpeech", {"stream_key": stream.key, "index": spoken_index, "text": "", "end_of_speech": True})
+            await self.flush_speech()
             await self.send("EchoAvatarText", {"stream_key": stream.key, "mode": "increment", "text": "", "end_of_speech": True})
             stream.status = "ended"
             await self.signal("stream_end", stream)
@@ -336,6 +386,7 @@ class AvatarSession:
         text = "Okay, I'll speak English now." if language == "english" else "Sawa, sasa nitazungumza Kiswahili."
         await self.send("EchoAvatarText", {"stream_key": stream.key, "mode": "full_text", "text": text, "end_of_speech": True})
         await self.send_speech(stream.key, 0, text, final=True)
+        await self.flush_speech()
         stream.status = "ended"
         await self.signal("stream_end", stream)
 
@@ -453,6 +504,7 @@ async def avatar_socket(websocket: WebSocket, transport: Any = None) -> None:
     finally:
         if session.reply_task and not session.reply_task.done():
             session.reply_task.cancel()
+        session.drop_speech()
         SESSIONS.release()
         try:
             await websocket.close()
@@ -467,7 +519,8 @@ def avatar_status() -> dict[str, Any]:
         "protocol": "OpenAvatarChat session protocol (text + control subset) with AvatarSpeech/AvatarCard extensions",
         "personas": [p.public() for p in PERSONAS.values()],
         "llm": {"configured": status["configured"], "model": status["model"], "api": status["api"]},
-        "speech": "browser speech recognition and synthesis (no audio leaves the browser except as recognized text)",
+        "speech": "browser speech recognition; voice from " + tts_status()["provider"],
+        "voice": tts_status(),
         "avatar": "browser-rendered SVG avatar driven by ARKit blendshape channels",
         "active_sessions": SESSIONS.active,
         "max_sessions": _limit("ESHB_AVATAR_MAX_SESSIONS", 20),

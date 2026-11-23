@@ -772,8 +772,9 @@ Mark uncertain readings with low confidence. Never invent Gardiner codes; use nu
 async def read_image(image_data_url: str, language: str, question: str = "", detail: str = "high") -> dict[str, Any]:
     """Ask the configured multimodal model for a teacher-style reading, then cross-check it."""
     from ..ai import _responses_request
+    from .personas import LANGUAGES
     lang = _lang(language)
-    prompt = (f"The learner's language is {'Swahili' if lang == 'swahili' else 'English'}. "
+    prompt = (f"The learner's language is {LANGUAGES.get(language, LANGUAGES['english'])['label']} ({language}). "
               f"The learner asks: {question or 'What does this say? Please read it to me.'}")
     raw = await _responses_request(
         [{"type": "input_text", "text": prompt}, {"type": "input_image", "image_url": image_data_url, "detail": detail}],
@@ -819,7 +820,8 @@ def reading_from_model(raw: dict[str, Any], language: str) -> dict[str, Any]:
         pronunciation = str(item.get("pronunciation") or (egyptian_pronunciation(transliteration) if script_key == "hieroglyphic" and transliteration else transliteration))
         confidence = item.get("confidence")
         segments.append({"original": original, "signs": signs, "transliteration": transliteration, "pronunciation": pronunciation,
-                         "meaning": {"english": meaning_en, "swahili": meaning_user if lang == "swahili" else ""} if lang == "swahili" else {"english": meaning_user or meaning_en, "swahili": ""},
+                         "meaning": {"english": meaning_en or meaning_user, "swahili": meaning_user if language == "swahili" else "",
+                                     **({language: meaning_user} if language not in {"english", "swahili"} and meaning_user else {})},
                          "source": source, "status": status,
                          "confidence": "high" if isinstance(confidence, (int, float)) and confidence >= 0.75 else "medium" if isinstance(confidence, (int, float)) and confidence >= 0.45 else "low"})
     reading = {
@@ -829,7 +831,8 @@ def reading_from_model(raw: dict[str, Any], language: str) -> dict[str, Any]:
         "direction_reason": str(raw.get("direction_reason") or ""),
         "summary": str(raw.get("summary") or ""),
         "segments": segments,
-        "translation": {"english": str(raw.get("translation_english") or ""), lang: str(raw.get("translation_learner") or raw.get("translation_english") or ""),
+        "translation": {"english": str(raw.get("translation_english") or raw.get("translation_learner") or ""),
+                        language: str(raw.get("translation_learner") or raw.get("translation_english") or ""),
                         "status": "model_reading"},
         "notes": [str(u) for u in (raw.get("uncertainties") or [])[:6]],
         "confidence": float(raw.get("overall_confidence") or 0.0),
