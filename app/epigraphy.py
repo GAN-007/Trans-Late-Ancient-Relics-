@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import re
 import unicodedata
 from dataclasses import dataclass, asdict
 from typing import Any
 
 from .egyptian import UNILITERALS
+from . import signs as sign_catalog
 
 # Unicode 17.0 ranges. Extended-A was added for the substantially larger
 # Greco-Roman/sign inventory. Format controls encode quadrat layout rather than
@@ -126,6 +128,26 @@ def unicode_block(char: str) -> str | None:
     return None
 
 
+def _catalog_sign(char: str) -> SignInfo | None:
+    """Fallback to the complete Unikemet catalog for signs outside the reviewed teaching core."""
+    record = sign_catalog.sign(char)
+    if not record:
+        return None
+    functions = []
+    for f in record["functions"]:
+        role = f["role"]
+        if role == "phonogram":
+            n = max((len(re.sub(r"[^a-zꜣꜥḥḫẖšṯḏq]", "", v)) for v in record["values"]), default=0)
+            functions.append({1: "uniliteral", 2: "biliteral", 3: "triliteral"}.get(n, "phonogram"))
+        elif role == "classifier":
+            functions.append("determinative")
+        else:
+            functions.append(role)
+    classifier = next((f["detail"] for f in record["functions"] if f["role"] == "classifier" and f["detail"]), None)
+    return SignInfo(char, record["gardiner"], tuple(record["values"]), tuple(dict.fromkeys(functions)), classifier,
+                    f"Unikemet {record['catalog']}: {record['description']}")
+
+
 def tokenize_hieroglyphic_text(text: str) -> dict[str, Any]:
     signs: list[dict[str, Any]] = []
     controls: list[dict[str, Any]] = []
@@ -134,6 +156,10 @@ def tokenize_hieroglyphic_text(text: str) -> dict[str, Any]:
         cp = ord(char)
         if is_hieroglyph(char):
             info = CORE_SIGNS.get(char)
+            source = "reviewed_core" if info else None
+            if info is None:
+                info = _catalog_sign(char)
+                source = "unikemet" if info else None
             signs.append(
                 {
                     "index": index,
@@ -143,6 +169,7 @@ def tokenize_hieroglyphic_text(text: str) -> dict[str, Any]:
                     "unicode_block": unicode_block(char),
                     "known": info is not None,
                     "sign": asdict(info) if info else None,
+                    "source": source,
                 }
             )
         elif is_format_control(char):
@@ -247,9 +274,12 @@ def analyze_hieroglyphic_text(text: str) -> dict[str, Any]:
             "note": "Egyptian text may run right-to-left or left-to-right. Plain Unicode code-point order does not reliably encode the original facing direction; use image evidence/sign orientation or an explicit user override.",
         },
         "coverage": {
-            "known_core_signs": len(signs) - len(unknown_signs),
+            "known_signs": len(signs) - len(unknown_signs),
+            "from_reviewed_core": sum(1 for s in signs if s["source"] == "reviewed_core"),
+            "from_unikemet": sum(1 for s in signs if s["source"] == "unikemet"),
             "unknown_or_unmapped_signs": len(unknown_signs),
-            "warning": "The built-in catalog is a reviewed teaching core, not a complete Unikemet/Gardiner database.",
+            "note": "Sign data comes from the reviewed teaching core first, then the complete Unicode Unikemet catalog. "
+                    "Functions listed are possibilities; context decides which one a sign has in a word.",
         },
     }
 
@@ -259,6 +289,10 @@ def gardiner_core_lookup(code: str) -> dict[str, Any] | None:
     for info in CORE_SIGNS.values():
         if (info.gardiner or "").upper() == code:
             return asdict(info)
+    record = sign_catalog.sign(code)
+    if record:
+        info = _catalog_sign(record["glyph"])
+        return asdict(info) if info else None
     return None
 
 
@@ -268,6 +302,7 @@ def epigraphy_capabilities() -> dict[str, Any]:
         "unicode_format_controls": f"U+{FORMAT_START:05X}–U+{FORMAT_END:05X}",
         "unicode_extended_a": f"U+{EXT_A_START:05X}–U+{EXT_A_END:05X}",
         "known_core_signs": len(CORE_SIGNS),
+        "sign_catalog": sign_catalog.catalog_info(),
         "format_controls_documented": len(FORMAT_CONTROLS),
         "supports": [
             "Unicode sign detection",
@@ -276,10 +311,12 @@ def epigraphy_capabilities() -> dict[str, Any]:
             "candidate determinatives",
             "candidate phonetic complements",
             "damage/lost-sign controls",
+            "complete Unikemet sign catalog with functions, values, codes, variants and orientation",
+            "quadrat parsing and layout rendering",
         ],
         "does_not_claim": [
             "complete sign-function disambiguation",
             "automatic reading direction from code-point order",
-            "complete Gardiner/Unikemet coverage",
+            "signs outside Unicode (unencoded variants need an image or a catalog code)",
         ],
     }

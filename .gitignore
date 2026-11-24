@@ -10,3 +10,4 @@ data-runtime/
 models/classes.json
 datasets/
 research-exports/
+!tests/fixtures/vision/*.onnx

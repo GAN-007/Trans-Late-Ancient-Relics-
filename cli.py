@@ -65,6 +65,35 @@ def build_parser() -> argparse.ArgumentParser:
     command.add_argument("--brief", action="store_true", help="Print only one line per language")
 
     sub.add_parser("status", help="Show optional AI provider status")
+
+    command = sub.add_parser("corpus", help="Attestation database: import TLA records or the Coptic lexicon, search, stats")
+    command.add_argument("action", choices=["import-tla", "import-coptic", "stats", "search", "lemma"])
+    command.add_argument("value", nargs="?", help="path (imports), query (search) or lemma id (lemma)")
+    command.add_argument("--source-id", default="tla", help="source id for a TLA import (re-importing replaces it)")
+
+    command = sub.add_parser("restore", help="Restore lacunae ([...]) with probability distributions")
+    command.add_argument("text")
+
+    command = sub.add_parser("evaluate", help="Artifact-level evaluation: translation (EN/SW) or a vision model")
+    command.add_argument("kind", choices=["translation", "restoration", "vision"])
+    command.add_argument("--model", help="ONNX model (vision)")
+    command.add_argument("--classes", help="classes.json (vision)")
+    command.add_argument("--manifest", help="dataset manifest JSON/JSONL (vision)")
+    command.add_argument("--split", default="test", choices=["train", "val", "test", "all"])
+
+    command = sub.add_parser("models", help="Model registry: list, register, approve, deploy, retire")
+    command.add_argument("action", choices=["list", "register", "approve", "deploy", "retire"])
+    command.add_argument("value", nargs="?", help="model id, or file path for register")
+    command.add_argument("--name")
+    command.add_argument("--dataset")
+    command.add_argument("--license")
+    command.add_argument("--metrics", help="metrics JSON file (e.g. from evaluate vision)")
+    command.add_argument("--actor", default="cli")
+
+    command = sub.add_parser("audit", help="Show or verify the tamper-evident audit log")
+    command.add_argument("action", choices=["show", "verify"])
+
+    sub.add_parser("migrate", help="Apply database migrations (SQLite or PostgreSQL)")
     return parser
 
 
@@ -116,6 +145,50 @@ def main() -> None:
             output = translate_word(args.text, args.source, args.target)
             if args.target == "egyptian" and not output.get("ok"):
                 output = translate_phrase(args.text, args.source)
+    elif args.cmd == "corpus":
+        from app.corpus import store
+        if args.action == "import-tla":
+            output = store.import_tla(args.value, args.source_id)
+        elif args.action == "import-coptic":
+            output = store.import_coptic(args.value)
+        elif args.action == "stats":
+            output = store.stats()
+        elif args.action == "search":
+            output = store.search(args.value or "")
+        else:
+            output = store.lemma(args.value or "")
+    elif args.cmd == "restore":
+        from app.restoration import restore
+        output = restore(args.text)
+    elif args.cmd == "evaluate":
+        if args.kind == "translation":
+            from app.translation_eval import evaluate
+            output = evaluate()
+        elif args.kind == "restoration":
+            from app.restoration import evaluate as restoration_eval
+            output = restoration_eval()
+        else:
+            from app.vision_bench import artifact_split, evaluate_onnx, load_manifest
+            items = load_manifest(args.manifest)
+            if args.split != "all":
+                items = artifact_split(items)["splits"][args.split]
+            output = evaluate_onnx(args.model, json.loads(open(args.classes, encoding="utf-8").read()), items)
+    elif args.cmd == "models":
+        from app.storage import registry
+        if args.action == "list":
+            output = registry.list_models(args.name)
+        elif args.action == "register":
+            metrics = json.loads(open(args.metrics, encoding="utf-8").read()) if args.metrics else {}
+            output = registry.register(args.name or "model", args.value, metrics, args.dataset, args.license, actor=args.actor)
+        else:
+            status = {"approve": "approved", "deploy": "deployed", "retire": "retired"}[args.action]
+            output = registry.promote(int(args.value), status, args.actor)
+    elif args.cmd == "audit":
+        from app.storage import audit
+        output = audit.entries(50) if args.action == "show" else audit.verify()
+    elif args.cmd == "migrate":
+        from app.storage.migrations import migrate, status
+        output = {"applied": migrate(), "migrations": status()}
     else:  # pragma: no cover
         raise RuntimeError("Unknown command")
     _dump(output)

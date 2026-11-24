@@ -1,0 +1,313 @@
+{
+ "basis": "Standard Egyptian-Coptic etymologies as given in J. Černý, Coptic Etymological Dictionary (CED, 1976) and W. Vycichl, Dictionnaire étymologique de la langue copte (DELC, 1983); each Coptic entry's own references (CD/CED/DELC/KoptHWb) come from the Comprehensive Coptic Lexicon.",
+ "pairs": [
+  {
+   "egyptian": "nṯr",
+   "meaning": "god",
+   "coptic": "ⲛⲟⲩⲧⲉ",
+   "match": "god",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "ꜥnḫ",
+   "meaning": "live, life",
+   "coptic": "ⲱⲛϩ",
+   "match": "live",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "nfr",
+   "meaning": "good",
+   "coptic": "ⲛⲟⲩϥⲉ",
+   "match": "good",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "rmṯ",
+   "meaning": "man, person",
+   "coptic": "ⲣⲱⲙⲉ",
+   "match": "man",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "rn",
+   "meaning": "name",
+   "coptic": "ⲣⲁⲛ",
+   "match": "name",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "s-ḥjm.t",
+   "meaning": "woman",
+   "coptic": "ⲥϩⲓⲙⲉ",
+   "match": "woman",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "mw",
+   "meaning": "water",
+   "coptic": "ⲙⲟⲟⲩ",
+   "match": "water",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "sḏm",
+   "meaning": "hear",
+   "coptic": "ⲥⲱⲧⲙ",
+   "match": "hear",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "tꜣ",
+   "meaning": "land, earth",
+   "coptic": "ⲧⲟ",
+   "match": "land",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "ḥr",
+   "meaning": "face",
+   "coptic": "ϩⲟ",
+   "match": "face",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "ḥꜣ.tj",
+   "meaning": "heart",
+   "coptic": "ϩⲏⲧ",
+   "match": "heart",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "mꜣꜥ.t",
+   "meaning": "truth",
+   "coptic": "ⲙⲉ",
+   "match": "truth",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "sn",
+   "meaning": "brother",
+   "coptic": "ⲥⲟⲛ",
+   "match": "brother",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "jt",
+   "meaning": "father",
+   "coptic": "ⲉⲓⲱⲧ",
+   "match": "father",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "mw.t",
+   "meaning": "mother",
+   "coptic": "ⲙⲁⲁⲩ",
+   "match": "mother",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "rꜥ",
+   "meaning": "sun",
+   "coptic": "ⲣⲏ",
+   "match": "sun",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "ḏd",
+   "meaning": "say",
+   "coptic": "ϫⲱ",
+   "match": "say",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "jrj",
+   "meaning": "do, make",
+   "coptic": "ⲉⲓⲣⲉ",
+   "match": "do",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "rdj",
+   "meaning": "give",
+   "coptic": "ϯ",
+   "match": "give",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "wnm",
+   "meaning": "eat",
+   "coptic": "ⲟⲩⲱⲙ",
+   "match": "eat",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "swr",
+   "meaning": "drink",
+   "coptic": "ⲥⲱ",
+   "match": "drink",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "jwj",
+   "meaning": "come",
+   "coptic": "ⲉⲓ",
+   "match": "come",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "mrj",
+   "meaning": "love",
+   "coptic": "ⲙⲉ",
+   "match": "love",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "sẖꜣ",
+   "meaning": "write",
+   "coptic": "ⲥϩⲁⲓ",
+   "match": "write",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "qd",
+   "meaning": "build",
+   "coptic": "ⲕⲱⲧ",
+   "match": "build",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "nb",
+   "meaning": "lord",
+   "coptic": "ⲛⲏⲃ",
+   "match": "lord",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "šrj",
+   "meaning": "son, child",
+   "coptic": "ϣⲏⲣⲉ",
+   "match": "son",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "hrw",
+   "meaning": "day",
+   "coptic": "ϩⲟⲟⲩ",
+   "match": "day",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "ḏw",
+   "meaning": "mountain",
+   "coptic": "ⲧⲟⲟⲩ",
+   "match": "mountain",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "jtrw",
+   "meaning": "river",
+   "coptic": "ⲉⲓⲉⲣⲟ",
+   "match": "river",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "ꜥq",
+   "meaning": "bread",
+   "coptic": "ⲟⲉⲓⲕ",
+   "match": "bread",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "swn",
+   "meaning": "know",
+   "coptic": "ⲥⲟⲟⲩⲛ",
+   "match": "know",
+   "confidence": "medium"
+  },
+  {
+   "egyptian": "nw",
+   "meaning": "see, look",
+   "coptic": "ⲛⲁⲩ",
+   "match": "look",
+   "confidence": "medium"
+  },
+  {
+   "egyptian": "nsw",
+   "meaning": "king",
+   "coptic": "ⲣⲣⲟ",
+   "match": "king",
+   "confidence": "medium"
+  },
+  {
+   "egyptian": "wḥr",
+   "meaning": "dog",
+   "coptic": "ⲟⲩϩⲟⲣ",
+   "match": "dog",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "ḥmsj",
+   "meaning": "sit",
+   "coptic": "ϩⲙⲟⲟⲥ",
+   "match": "sit",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "šm",
+   "meaning": "go",
+   "coptic": "ϣⲉ",
+   "match": "go",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "bꜣk",
+   "meaning": "servant",
+   "coptic": "ⲃⲱⲕ",
+   "match": "servant",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "jnr",
+   "meaning": "stone",
+   "coptic": "ⲱⲛⲉ",
+   "match": "stone",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "nbw",
+   "meaning": "gold",
+   "coptic": "ⲛⲟⲩⲃ",
+   "match": "gold",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "pt",
+   "meaning": "sky",
+   "coptic": "ⲡⲉ",
+   "match": "heaven",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "jꜥḥ",
+   "meaning": "moon",
+   "coptic": "ⲟⲟϩ",
+   "match": "moon",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "ꜥꜣ",
+   "meaning": "donkey",
+   "coptic": "ⲉⲓⲱ",
+   "match": "donkey",
+   "confidence": "high"
+  },
+  {
+   "egyptian": "km.t",
+   "meaning": "Egypt",
+   "coptic": "ⲕⲏⲙⲉ",
+   "match": "egypt",
+   "confidence": "high"
+  }
+ ]
+}

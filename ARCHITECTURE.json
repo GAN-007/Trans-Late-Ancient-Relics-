@@ -15,44 +15,325 @@
   ],
   "clients": {
     "browser_pwa": {
-      "inputs": ["keyboard", "touch", "microphone", "camera", "image upload"],
-      "outputs": ["text", "hieroglyphs", "speech synthesis", "camera overlays", "ambiguity/evidence"],
-      "transports": ["HTTP/JSON", "same-origin WebSocket"],
-      "device_classes": ["phone", "tablet", "desktop", "laptop", "Chromebook", "museum kiosk"]
+      "inputs": [
+        "keyboard",
+        "touch",
+        "microphone",
+        "camera",
+        "image upload"
+      ],
+      "outputs": [
+        "text",
+        "hieroglyphs",
+        "speech synthesis",
+        "camera overlays",
+        "ambiguity/evidence"
+      ],
+      "transports": [
+        "HTTP/JSON",
+        "same-origin WebSocket"
+      ],
+      "device_classes": [
+        "phone",
+        "tablet",
+        "desktop",
+        "laptop",
+        "Chromebook",
+        "museum kiosk"
+      ]
     },
-    "cli": {"inputs": ["text", "IPA", "transliteration"], "outputs": ["JSON", "hieroglyph Unicode", "analysis"]},
-    "api": {"protocols": ["HTTP/JSON", "WebSocket/JSON"], "consumers": ["PWA", "native wrappers", "research tools", "museum systems", "learning integrations"]}
+    "cli": {
+      "inputs": [
+        "text",
+        "IPA",
+        "transliteration"
+      ],
+      "outputs": [
+        "JSON",
+        "hieroglyph Unicode",
+        "analysis"
+      ]
+    },
+    "api": {
+      "protocols": [
+        "HTTP/JSON",
+        "WebSocket/JSON"
+      ],
+      "consumers": [
+        "PWA",
+        "native wrappers",
+        "research tools",
+        "museum systems",
+        "learning integrations"
+      ]
+    }
   },
   "layers": [
-    {"id": "eshb_orthography", "purpose": "Reversible English/Swahili orthography ↔ ESHB", "reversible": true},
-    {"id": "eshb_ipa", "purpose": "Reversible IPA ↔ ESHB with Unicode fallback", "reversible": true},
-    {"id": "historical_script", "purpose": "Transliteration, core signs, format controls, Extended-A detection and sign-function candidates", "reversible": "partial/context-sensitive"},
-    {"id": "morphology", "purpose": "Conservative teaching morphology and clause hints", "complete_historical_parser": false},
-    {"id": "linguistic_core", "purpose": "Trilingual lexicon, ambiguity-aware lexical analysis and grammar templates", "reversible": false},
-    {"id": "contextual_translation", "purpose": "Deterministic evidence + context + clarification questions + optional AI ranking", "ai_can_raise_evidence_tier": false},
-    {"id": "vision_orchestration", "purpose": "Validated image transport and local/AI/hybrid evidence routing", "ordinary_frames_persisted": false},
-    {"id": "local_vision", "purpose": "Optional OpenCV/ONNX detector adapter with letterbox/NMS/model identity", "weights_shipped": false},
-    {"id": "streaming", "purpose": "Vision/conversation WebSockets with per-connection rate limits and sequential backpressure", "persistence": false},
-    {"id": "pronunciation", "purpose": "Classroom reading + consonantal IPA candidates + explicit historical uncertainty", "exact_vowels_claimed": false},
-    {"id": "pedagogy", "purpose": "26 lessons, quizzes and authenticated progress"},
-    {"id": "knowledge_governance", "purpose": "Proposals, unresolved-term queue, evidence review and runtime lexicon overlay", "auto_approval": false},
-    {"id": "active_learning", "purpose": "Opt-in vision corrections, reviewer approval and dataset manifest", "automatic_retraining": false, "automatic_model_promotion": false},
-    {"id": "identity_permissions", "purpose": "scrypt-based accounts, opaque sessions and server-side RBAC"},
-    {"id": "ancient_language_ladder", "purpose": "Any-to-any translation through a language-neutral meaning frame: English, Swahili, archaic Sumerian, Old Akkadian, archaic hieroglyphic, Old and Middle Egyptian, Old Latin, pre-Islamic Old Arabic, Ge'ez, Old Amharic, Proto-Semitic and Proto-World", "modules": ["app/ancient/lexicon.py", "app/ancient/grammar.py", "app/ancient/parsing.py", "app/ancient/scripts.py", "app/ancient/engine.py", "app/ancient/bridge.py", "app/ancient/quiz.py", "app/ancient/phonetics.py"], "pronunciation": "IPA + read-aloud respelling with certainty for every rung; voices read the respelling", "sentence_types": ["statement", "negative", "yes/no question", "nominal (noun or adjective predicate)"], "modern_bridge": "modern languages via English with the universal machine translator; ancient forms always from the grammar", "quizzes": "/api/ancient/quiz for every rung", "partial_translations": "reported as complete=false with not_translated parts", "native_scripts": ["cuneiform", "Egyptian hieroglyphs", "Ge'ez fidel", "Old Italic", "Safaitic", "early undotted Arabic", "Arabic"], "reversible": "generated forms are indexed for parsing; homographs reported as ambiguities", "sentences_claimed_as_attested": false},
-    {"id": "live_avatar_chat", "purpose": "Voice/text chat with an animated guide; OpenAvatarChat architecture (Apache-2.0) with browser ASR/TTS and server-streamed replies", "modules": ["app/avatar_chat/session.py", "app/avatar_chat/brain.py", "app/avatar_chat/reading.py", "app/avatar_chat/tutor.py", "app/avatar_chat/text_tools.py", "app/avatar_chat/visemes.py", "app/avatar_chat/personas.py", "app/avatar_chat/tools.py", "app/avatar_chat/voice.py", "app/static/js/avatar.js"], "transport": "/ws/avatar", "protocol": "OpenAvatarChat session messages (text + control) plus AvatarSpeech/AvatarCard", "grounding": "model tool calling (app/avatar_chat/tools.py: translate_ancient, read_script, translate_modern, lookup_word, teach_phrase, start_quiz, app_action, list_capabilities) over the Responses and Chat Completions APIs", "voice": "app/avatar_chat/voice.py: browser, OpenAI /audio/speech or Azure SSML; audio-driven lip-sync in the browser", "learner_languages": "13 (English and Kiswahili offline; others via universal translator or model)", "reading_lessons": "app/avatar_chat/reading.py: native-script and vision readings cross-checked against Unicode sign data, Gardiner catalog, Middle Egyptian lexicon and the ladder", "tutor": "app/avatar_chat/tutor.py", "stores_audio": false, "stores_images": false, "persists_conversations": false}
+    {
+      "id": "eshb_orthography",
+      "purpose": "Reversible English/Swahili orthography ↔ ESHB",
+      "reversible": true
+    },
+    {
+      "id": "eshb_ipa",
+      "purpose": "Reversible IPA ↔ ESHB with Unicode fallback",
+      "reversible": true
+    },
+    {
+      "id": "historical_script",
+      "purpose": "Transliteration, core signs, format controls, Extended-A detection and sign-function candidates",
+      "reversible": "partial/context-sensitive"
+    },
+    {
+      "id": "morphology",
+      "purpose": "Conservative teaching morphology and clause hints",
+      "complete_historical_parser": false,
+      "period_diagnostics": "app/periods.py"
+    },
+    {
+      "id": "linguistic_core",
+      "purpose": "Trilingual lexicon, ambiguity-aware lexical analysis and grammar templates",
+      "reversible": false
+    },
+    {
+      "id": "contextual_translation",
+      "purpose": "Deterministic evidence + context + clarification questions + optional AI ranking",
+      "ai_can_raise_evidence_tier": false
+    },
+    {
+      "id": "vision_orchestration",
+      "purpose": "Validated image transport and local/AI/hybrid evidence routing",
+      "ordinary_frames_persisted": false
+    },
+    {
+      "id": "local_vision",
+      "purpose": "Optional OpenCV/ONNX detector adapter with letterbox/NMS/model identity",
+      "weights_shipped": false,
+      "benchmark": "app/vision_bench.py (artifact-level splits, ECE, open-set AUROC)",
+      "training": "scripts/train_vision.py"
+    },
+    {
+      "id": "streaming",
+      "purpose": "Vision/conversation WebSockets with per-connection rate limits and sequential backpressure",
+      "persistence": false
+    },
+    {
+      "id": "pronunciation",
+      "purpose": "Classroom reading + consonantal IPA candidates + explicit historical uncertainty",
+      "exact_vowels_claimed": false
+    },
+    {
+      "id": "pedagogy",
+      "purpose": "26 lessons, quizzes and authenticated progress"
+    },
+    {
+      "id": "knowledge_governance",
+      "purpose": "Proposals, unresolved-term queue, evidence review and runtime lexicon overlay",
+      "auto_approval": false
+    },
+    {
+      "id": "active_learning",
+      "purpose": "Opt-in vision corrections, reviewer approval and dataset manifest",
+      "automatic_retraining": false,
+      "automatic_model_promotion": false
+    },
+    {
+      "id": "identity_permissions",
+      "purpose": "scrypt-based accounts, opaque sessions and server-side RBAC"
+    },
+    {
+      "id": "ancient_language_ladder",
+      "purpose": "Any-to-any translation through a language-neutral meaning frame: English, Swahili, archaic Sumerian, Old Akkadian, archaic hieroglyphic, Old and Middle Egyptian, Old Latin, pre-Islamic Old Arabic, Ge'ez, Old Amharic, Proto-Semitic and Proto-World",
+      "modules": [
+        "app/ancient/lexicon.py",
+        "app/ancient/grammar.py",
+        "app/ancient/parsing.py",
+        "app/ancient/scripts.py",
+        "app/ancient/engine.py",
+        "app/ancient/bridge.py",
+        "app/ancient/quiz.py",
+        "app/ancient/phonetics.py"
+      ],
+      "pronunciation": "IPA + read-aloud respelling with certainty for every rung; voices read the respelling",
+      "sentence_types": [
+        "statement",
+        "negative",
+        "yes/no question",
+        "nominal (noun or adjective predicate)"
+      ],
+      "modern_bridge": "modern languages via English with the universal machine translator; ancient forms always from the grammar",
+      "quizzes": "/api/ancient/quiz for every rung",
+      "partial_translations": "reported as complete=false with not_translated parts",
+      "native_scripts": [
+        "cuneiform",
+        "Egyptian hieroglyphs",
+        "Ge'ez fidel",
+        "Old Italic",
+        "Safaitic",
+        "early undotted Arabic",
+        "Arabic"
+      ],
+      "reversible": "generated forms are indexed for parsing; homographs reported as ambiguities",
+      "sentences_claimed_as_attested": false
+    },
+    {
+      "id": "live_avatar_chat",
+      "purpose": "Voice/text chat with an animated guide; OpenAvatarChat architecture (Apache-2.0) with browser ASR/TTS and server-streamed replies",
+      "modules": [
+        "app/avatar_chat/session.py",
+        "app/avatar_chat/brain.py",
+        "app/avatar_chat/reading.py",
+        "app/avatar_chat/tutor.py",
+        "app/avatar_chat/text_tools.py",
+        "app/avatar_chat/visemes.py",
+        "app/avatar_chat/personas.py",
+        "app/avatar_chat/tools.py",
+        "app/avatar_chat/voice.py",
+        "app/static/js/avatar.js"
+      ],
+      "transport": "/ws/avatar",
+      "protocol": "OpenAvatarChat session messages (text + control) plus AvatarSpeech/AvatarCard",
+      "grounding": "model tool calling (app/avatar_chat/tools.py: translate_ancient, read_script, translate_modern, lookup_word, teach_phrase, start_quiz, app_action, list_capabilities) over the Responses and Chat Completions APIs",
+      "voice": "app/avatar_chat/voice.py: browser, OpenAI /audio/speech or Azure SSML; audio-driven lip-sync in the browser",
+      "learner_languages": "13 (English and Kiswahili offline; others via universal translator or model)",
+      "reading_lessons": "app/avatar_chat/reading.py: native-script and vision readings cross-checked against Unicode sign data, Gardiner catalog, Middle Egyptian lexicon and the ladder",
+      "tutor": "app/avatar_chat/tutor.py",
+      "stores_audio": false,
+      "stores_images": false,
+      "persists_conversations": false
+    },
+    {
+      "id": "attestation_corpus",
+      "purpose": "Source-attested lemmas, senses, forms, texts, objects, sentences and attestations with stage, date and line provenance",
+      "modules": [
+        "app/corpus/store.py",
+        "app/corpus/chronology.py"
+      ],
+      "sources": [
+        "TLA BTS JSON",
+        "TLA flat JSONL",
+        "Comprehensive Coptic Lexicon v1.2",
+        "teaching lexicon (status=teaching)"
+      ]
+    },
+    {
+      "id": "sign_catalog",
+      "purpose": "Unicode Unikemet catalog: values, functions, Gardiner/HG/IFAO codes, orientation, variants",
+      "modules": [
+        "app/signs.py",
+        "scripts/build_sign_catalog.py"
+      ],
+      "signs": 5067
+    },
+    {
+      "id": "quadrat_engine",
+      "purpose": "Unicode format-control and Manuel de Codage parser, converter and SVG layout with real glyph metrics",
+      "modules": [
+        "app/quadrat.py"
+      ]
+    },
+    {
+      "id": "period_grammar",
+      "purpose": "Stage-diagnostic grammatical features, anachronism detection, TLA gloss reading",
+      "modules": [
+        "app/periods.py"
+      ],
+      "complete_parser": false
+    },
+    {
+      "id": "restoration",
+      "purpose": "Leiden-aware lacuna restoration with probability distributions, unseen mass and entropy",
+      "modules": [
+        "app/restoration.py"
+      ],
+      "evaluation": "in-sample leave-one-out"
+    },
+    {
+      "id": "coptic_and_vocalization",
+      "purpose": "Coptic lexicon, reader and Sahidic pronunciation; Egyptian-to-Coptic etymology bridge",
+      "modules": [
+        "app/coptic.py",
+        "app/script_stages.py"
+      ],
+      "claims": "reconstructed, not recorded"
+    },
+    {
+      "id": "translation_evaluation",
+      "purpose": "Artifact-level chrF/chrF++ for English and Swahili with a CI regression floor",
+      "modules": [
+        "app/translation_eval.py"
+      ],
+      "expert_references": false
+    },
+    {
+      "id": "institutional_storage",
+      "purpose": "PostgreSQL compatibility, migrations, content-addressed object store (local/S3), hash-chained audit log, gated model registry",
+      "modules": [
+        "app/storage/pg.py",
+        "app/storage/migrations.py",
+        "app/storage/objects.py",
+        "app/storage/audit.py",
+        "app/storage/registry.py"
+      ],
+      "databases": [
+        "sqlite",
+        "postgresql"
+      ]
+    }
   ],
   "roles": {
-    "guest": ["translate", "camera", "voice", "dictionary", "lessons", "script/epigraphy tools"],
-    "learner": ["guest capabilities", "save progress/history/feedback", "submit vision corrections"],
-    "contributor": ["learner capabilities", "create linguistic knowledge proposals"],
-    "reviewer": ["contributor capabilities", "inspect/review linguistic proposals", "inspect/review vision corrections"],
-    "admin": ["reviewer capabilities", "manage roles", "run AI draft loop", "export approved dataset manifest"]
+    "guest": [
+      "translate",
+      "camera",
+      "voice",
+      "dictionary",
+      "lessons",
+      "script/epigraphy tools"
+    ],
+    "learner": [
+      "guest capabilities",
+      "save progress/history/feedback",
+      "submit vision corrections"
+    ],
+    "contributor": [
+      "learner capabilities",
+      "create linguistic knowledge proposals"
+    ],
+    "reviewer": [
+      "contributor capabilities",
+      "inspect/review linguistic proposals",
+      "inspect/review vision corrections"
+    ],
+    "admin": [
+      "reviewer capabilities",
+      "manage roles",
+      "run AI draft loop",
+      "export approved dataset manifest"
+    ]
   },
   "historical_translation_pipeline": [
-    "meaning / communicative intent", "period/genre/provenance when known", "lexical sense candidates", "morphology", "syntax", "Egyptological transliteration", "attested orthography", "phonogram/logogram/complement/determinative function", "quadrat/layout representation"
+    "meaning / communicative intent",
+    "period/genre/provenance when known",
+    "lexical sense candidates",
+    "morphology",
+    "syntax",
+    "Egyptological transliteration",
+    "attested orthography",
+    "phonogram/logogram/complement/determinative function",
+    "quadrat/layout representation"
   ],
   "reverse_epigraphy_pipeline": [
-    "image or encoded inscription", "region/sign candidates", "orientation/reading-direction hypotheses", "group/quadrat analysis", "sign-function candidates", "transliteration candidates", "word segmentation", "morphology", "syntax", "sense/context disambiguation", "English/Swahili interpretations with evidence/confidence"
+    "image or encoded inscription",
+    "region/sign candidates",
+    "orientation/reading-direction hypotheses",
+    "group/quadrat analysis",
+    "sign-function candidates",
+    "transliteration candidates",
+    "word segmentation",
+    "morphology",
+    "syntax",
+    "sense/context disambiguation",
+    "English/Swahili interpretations with evidence/confidence"
   ],
   "vision_backends": {
     "auto": "prefer reviewed local ONNX when available, otherwise configured multimodal AI",

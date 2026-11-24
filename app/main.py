@@ -101,6 +101,8 @@ APP_VERSION = "3.0.0"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from .storage.migrations import migrate
+    migrate()
     init_auth_db()
     init_knowledge_db()
     init_history_db()
@@ -240,9 +242,12 @@ def register(req: RegisterRequest, request: Request, response: Response):
 def login(req: LoginRequest, request: Request, response: Response):
     from .security import check_rate_limit
     check_rate_limit(request, "auth-login", 20, 900)
+    from .storage import audit
     user = authenticate(req.username, req.password)
     if not user:
+        audit.record(req.username[:64] or "?", "auth.login_failed", None, {"ip": request.client.host if request.client else None})
         raise HTTPException(401, "Invalid username or password.")
+    audit.record(user["username"], "auth.login", f"user:{user['id']}")
     token = create_session(user["id"])
     set_session_cookie(response, token)
     return {"authenticated": True, "user": user}
@@ -268,10 +273,13 @@ def admin_users(_user: dict = Depends(require_permission("users:manage"))):
 
 @app.put("/api/admin/users/{user_id}/role")
 def admin_set_role(user_id: int, req: RoleUpdateRequest, _user: dict = Depends(require_permission("users:manage"))):
+    from .storage import audit
     try:
-        return {"user": set_user_role(user_id, req.role)}
+        updated = set_user_role(user_id, req.role)
     except ValueError as exc:
         raise HTTPException(404, str(exc)) from exc
+    audit.record(_user["username"], "users.set_role", f"user:{user_id}", {"role": req.role})
+    return {"user": updated}
 
 
 # ---------------- Reversible ESHB / script laboratory ----------------
@@ -426,6 +434,138 @@ async def ancient_translate(req: AncientTranslationRequest, request: Request):
     try:
         return await translate_any(req.text, req.source, req.targets or "all")
     except LadderError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+# ------------------------------------------------------------------ research layers
+@app.get("/api/signs/catalog")
+def signs_catalog_info():
+    from .signs import catalog_info
+    return catalog_info()
+
+
+@app.get("/api/signs/lookup")
+def signs_lookup(q: str):
+    from .signs import by_value, search, sign, variants
+    record = sign(q)
+    return {"sign": record, "variants": variants(q) if record else [], "by_value": by_value(q), "search": [] if record else search(q, 20)}
+
+
+@app.get("/api/quadrat")
+def quadrat_render(text: str, direction: str = "ltr", size: int = 64):
+    from .quadrat import QuadratError, render_svg
+    if direction not in {"ltr", "rtl"}:
+        raise HTTPException(422, "direction must be ltr or rtl")
+    try:
+        return render_svg(text[:2000], direction, max(16, min(size, 256)))
+    except QuadratError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/api/corpus/stats")
+def corpus_stats():
+    from .corpus.store import stats
+    return stats()
+
+
+@app.get("/api/corpus/search")
+def corpus_search(q: str, stage: str | None = None, lang: str | None = None, limit: int = 25):
+    from .corpus.store import search
+    return {"results": search(q, stage, lang, limit)}
+
+
+@app.get("/api/corpus/lemmas/{lemma_id}")
+def corpus_lemma(lemma_id: str):
+    from .corpus.store import lemma
+    found = lemma(lemma_id)
+    if not found:
+        raise HTTPException(404, "No such lemma")
+    return found
+
+
+@app.get("/api/coptic/read")
+def coptic_read(text: str, learner: str = "en"):
+    from .coptic import read
+    return read(text[:4000], learner)
+
+
+@app.get("/api/coptic/vocalization")
+def coptic_vocalization(egyptian: str):
+    from .coptic import bridge_status, vocalization
+    found = vocalization(egyptian)
+    return {"result": found, "bridge": bridge_status()} if found else {"result": None, "bridge": bridge_status(),
+            "message": "No Coptic descendant is recorded for this word in the etymology bridge."}
+
+
+@app.get("/api/scripts/stages")
+def script_stages_list():
+    from .script_stages import stages
+    return {"stages": stages()}
+
+
+@app.get("/api/grammar/periods")
+def grammar_periods(text: str = "", period: str | None = None):
+    from .periods import detect, inventory
+    if not text:
+        return {"inventory": inventory(period)}
+    try:
+        return detect(text[:4000], period)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/api/grammar/gloss")
+def grammar_gloss(gloss: str):
+    from .periods import explain_gloss
+    return explain_gloss(gloss)
+
+
+@app.get("/api/restoration")
+def restoration_restore(text: str, top: int = 5):
+    from .restoration import restore
+    return restore(text[:2000], max(1, min(top, 10)))
+
+
+@app.get("/api/evaluation/translation")
+def evaluation_translation():
+    from .translation_eval import evaluate
+    report = evaluate()
+    return {k: v for k, v in report.items() if k != "artifacts"} | {"artifacts": [
+        {k: a[k] for k in ("id", "title", "language", "provenance")} | {lang: {m: r[m] for m in ("chrf", "chrf_pp", "coverage", "exact")}
+                                                                       for lang, r in a["results"].items()} for a in report["artifacts"]]}
+
+
+@app.get("/api/vision/datasets")
+def vision_datasets():
+    from .vision_bench import dataset_registry
+    return {"datasets": dataset_registry()}
+
+
+@app.get("/api/admin/storage")
+def admin_storage(_user: dict = Depends(require_permission("users:manage"))):
+    from .storage import is_postgres, objects
+    from .storage.migrations import status as migration_status
+    return {"database": "postgresql" if is_postgres() else "sqlite", "migrations": migration_status(), "objects": objects.status()}
+
+
+@app.get("/api/admin/audit")
+def admin_audit(limit: int = 100, action: str | None = None, _user: dict = Depends(require_permission("users:manage"))):
+    from .storage import audit
+    return {"entries": audit.entries(max(1, min(limit, 1000)), action), "chain": audit.verify()}
+
+
+@app.get("/api/admin/models")
+def admin_models(_user: dict = Depends(require_permission("dataset:inspect"))):
+    from .storage.registry import list_models
+    return {"models": list_models()}
+
+
+@app.post("/api/admin/models/{model_id}/status")
+def admin_model_status(model_id: int, payload: dict, user: dict = Depends(require_permission("users:manage"))):
+    from .storage.registry import RegistryError, promote
+    try:
+        return {"model": promote(model_id, str(payload.get("status", "")), user["username"])}
+    except RegistryError as exc:
         raise HTTPException(422, str(exc)) from exc
 
 

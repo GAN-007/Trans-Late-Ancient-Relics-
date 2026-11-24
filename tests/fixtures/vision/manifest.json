@@ -1,0 +1,116 @@
+[
+ {
+  "image": "images/N35/stela_a_0.png",
+  "label": "N35",
+  "artifact": "stela_a",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N35/stela_a_1.png",
+  "label": "N35",
+  "artifact": "stela_a",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N35/stela_b_0.png",
+  "label": "N35",
+  "artifact": "stela_b",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N35/stela_b_1.png",
+  "label": "N35",
+  "artifact": "stela_b",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N35/coffin_c_0.png",
+  "label": "N35",
+  "artifact": "coffin_c",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N35/coffin_c_1.png",
+  "label": "N35",
+  "artifact": "coffin_c",
+  "source": "institutional"
+ },
+ {
+  "image": "images/X1/stela_a_0.png",
+  "label": "X1",
+  "artifact": "stela_a",
+  "source": "institutional"
+ },
+ {
+  "image": "images/X1/stela_a_1.png",
+  "label": "X1",
+  "artifact": "stela_a",
+  "source": "institutional"
+ },
+ {
+  "image": "images/X1/stela_b_0.png",
+  "label": "X1",
+  "artifact": "stela_b",
+  "source": "institutional"
+ },
+ {
+  "image": "images/X1/stela_b_1.png",
+  "label": "X1",
+  "artifact": "stela_b",
+  "source": "institutional"
+ },
+ {
+  "image": "images/X1/coffin_c_0.png",
+  "label": "X1",
+  "artifact": "coffin_c",
+  "source": "institutional"
+ },
+ {
+  "image": "images/X1/coffin_c_1.png",
+  "label": "X1",
+  "artifact": "coffin_c",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N5/stela_a_0.png",
+  "label": "N5",
+  "artifact": "stela_a",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N5/stela_a_1.png",
+  "label": "N5",
+  "artifact": "stela_a",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N5/stela_b_0.png",
+  "label": "N5",
+  "artifact": "stela_b",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N5/stela_b_1.png",
+  "label": "N5",
+  "artifact": "stela_b",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N5/coffin_c_0.png",
+  "label": "N5",
+  "artifact": "coffin_c",
+  "source": "institutional"
+ },
+ {
+  "image": "images/N5/coffin_c_1.png",
+  "label": "N5",
+  "artifact": "coffin_c",
+  "source": "institutional"
+ },
+ {
+  "image": "images/unknown/ostracon_d_0.png",
+  "label": null,
+  "artifact": "ostracon_d",
+  "source": "institutional"
+ }
+]

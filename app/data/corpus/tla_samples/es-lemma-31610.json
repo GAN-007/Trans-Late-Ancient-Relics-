@@ -1,0 +1,148 @@
+{
+  "eclass": "BTSLemmaEntry",
+  "editors": {
+    "author": "Alt\u00e4gyptisches W\u00f6rterbuch",
+    "contributors": null,
+    "created": "2015-06-26 16:13:10",
+    "type": "user",
+    "updated": "2019-12-19 16:38:53"
+  },
+  "externalReferences": {
+    "aaew": [
+      {
+        "id": "31610",
+        "type": "hieratic_hieroglyphic"
+      }
+    ],
+    "dza": [
+      {
+        "id": "31610",
+        "type": "hieratic_hieroglyphic"
+      }
+    ]
+  },
+  "id": "31610",
+  "name": "jzr",
+  "passport": {
+    "bibliography": [
+      {
+        "bibliographical_text_field": [
+          "Wb 1, 130.1-5; Germer, Flora, 125; L\u00c4 II, 1265"
+        ]
+      }
+    ],
+    "lemma": [
+      {
+        "main_group": [
+          {
+            "arb_vermerk": [
+              "korr."
+            ],
+            "comment": [
+              "Lesung der Cross-Reference: jsw"
+            ],
+            "english_comment": [
+              "Germer, Flora 124f."
+            ],
+            "lsort": [
+              "Oha"
+            ],
+            "wclassnum": [
+              "1010"
+            ],
+            "woart": [
+              "1001"
+            ],
+            "word_class": [
+              "WS"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "relations": {
+    "contains": [
+      {
+        "eclass": "BTSAnnotation",
+        "id": "2Y6NIZZWUJG7XAT3Y63A6WICA4",
+        "name": "Annotation zu $jzr$",
+        "type": null
+      },
+      {
+        "eclass": "BTSAnnotation",
+        "id": "P6RSHEBQC5FQNODHMZBCXVCDCQ",
+        "name": null,
+        "type": null
+      }
+    ],
+    "referencedBy": [
+      {
+        "eclass": "BTSLemmaEntry",
+        "id": "31030",
+        "name": "jz",
+        "type": "substantive"
+      },
+      {
+        "eclass": "BTSLemmaEntry",
+        "id": "31300",
+        "name": "jsw",
+        "type": "substantive"
+      }
+    ],
+    "root": [
+      {
+        "eclass": "BTSLemmaEntry",
+        "id": "865943",
+        "name": "jzr",
+        "type": "root"
+      }
+    ],
+    "successor": [
+      {
+        "eclass": "BTSLemmaEntry",
+        "id": "d222",
+        "name": "\ua723sr",
+        "type": "substantive"
+      }
+    ]
+  },
+  "revisionState": "published",
+  "sortKey": "ATM",
+  "subtype": "substantive_masc",
+  "time_span": {
+    "begin": -1939,
+    "end": 324
+  },
+  "translations": {
+    "de": [
+      "Tamariske"
+    ],
+    "en": [
+      "tamarisk"
+    ]
+  },
+  "type": "substantive",
+  "words": [
+    {
+      "flexion": {
+        "btsGloss": "(unedited)",
+        "lingGloss": "\u2014",
+        "numeric": 0
+      },
+      "glyphs": {"mdc": "M17:O34-D21:M1"},
+      "id": "IBUBd4ZvJZI7qkj5mGSsN5q5OX0",
+      "label": "jzr",
+      "lemma": {
+        "POS": null,
+        "id": null
+      },
+      "transcription": {
+        "mdc": "jzr",
+        "unicode": "jzr"
+      },
+      "translations": null,
+      "type": "word"
+    }
+  ]
+}
