@@ -371,6 +371,9 @@ GET  /api/vision/corrections
 POST /api/vision/corrections/{id}/review
 GET  /api/research/collection-policy
 GET  /api/research/dataset-manifest
+GET  /api/signs/lookup · /api/quadrat · /api/corpus/search · /api/coptic/read
+GET  /api/grammar/periods · /api/restoration · /api/evaluation/translation
+GET  /api/admin/storage · /api/admin/audit · /api/admin/models
 ```
 
 Existing ESHB, IPA, MdC, dictionary, lesson, auth, history, feedback and knowledge endpoints remain available.
@@ -385,20 +388,30 @@ Existing ESHB, IPA, MdC, dictionary, lesson, auth, history, feedback and knowled
 - [`docs/USER_JOURNEYS.md`](docs/USER_JOURNEYS.md) — roles/devices/workflows
 - [`docs/SECURITY_PRIVACY.md`](docs/SECURITY_PRIVACY.md) — security/privacy model
 - [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) — deployment configuration
+- [`docs/RESEARCH_LAYERS.md`](docs/RESEARCH_LAYERS.md) — attestation corpus, sign catalog, quadrats, period grammar, restoration, Coptic, evaluation, storage
 
-## Remaining research-grade work
+## Research layers
 
-The most important unsolved areas are now explicit:
+The ten research-grade layers listed in the v3 audit are now built and tested; see [`docs/RESEARCH_LAYERS.md`](docs/RESEARCH_LAYERS.md) and the **Research** tab.
 
-- source-attested lemma/sense database with period, genre, object and line provenance;
-- complete licensed Gardiner/Unikemet sign catalog and variants;
-- full quadrat/group parser and layout renderer;
-- period-aware morphology/syntax, not only teaching patterns;
-- dedicated epigraphic vision weights and a licensed benchmark;
-- damaged-text restoration with uncertainty distributions;
-- historical vocalization data grounded in comparative/Coptic evidence;
-- hieratic, Demotic and Coptic layers;
-- artifact-level multilingual evaluation for English and Swahili;
-- PostgreSQL/object storage/audit/model registry for institutional multi-node use.
+| Layer | What exists now | What still needs outside input |
+|---|---|---|
+| Attestation database | Lemmas, senses, texts, objects, lines and dates with provenance; TLA and Coptic importers | Import of the full TLA corpus (CC BY-SA, downloaded by the operator) |
+| Sign catalog | All 5,067 Unikemet signs with values, functions and variants | — |
+| Quadrats | Unicode-control and MdC parser, converter and SVG layout | Font glyphs for Extended-A signs |
+| Period grammar | Stage-diagnostic features with references; anachronism check; TLA gloss reader | A full corpus-trained parser |
+| Vision | Licence registry, artifact-level splits, calibrated metrics, ONNX evaluation, training script, approval gates | A GPU run on MMM/MEH to produce weights |
+| Restoration | Leiden-aware probability distributions with "something else" mass and entropy | Held-out evaluation on the full corpus |
+| Vocalization | 44 Egyptian→Coptic etymologies, Sahidic pronunciation after Layton | More pairs reviewed by a specialist |
+| Hieratic, Demotic, Coptic | Coptic lexicon and reader; script-stage model; hieratic and Demotic through transcription | Demotic lexical data |
+| EN/SW evaluation | Artifact-level chrF/chrF++ with a CI regression floor | Expert-reviewed reference translations |
+| Institutional storage | PostgreSQL, S3 or local object store, hash-chained audit log, model registry, migrations | — |
 
-v3 supplies safe integration points for those layers without claiming they already exist.
+```bash
+python cli.py migrate
+python cli.py corpus import-tla /data/tla --source-id tla-2024
+python cli.py restore "ḥtp dj [...] wsjr"
+python cli.py evaluate translation
+python cli.py models list
+python cli.py audit verify
+```

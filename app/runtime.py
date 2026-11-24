@@ -20,6 +20,10 @@ def db_path() -> Path:
 
 
 def connect() -> sqlite3.Connection:
+    url = os.environ.get("ESHB_DATABASE_URL", "").strip()
+    if url.startswith(("postgres://", "postgresql://")):
+        from .storage.pg import connect as pg_connect  # same interface, shared multi-node database
+        return pg_connect(url, os.environ.get("ESHB_DATABASE_SCHEMA") or None)  # type: ignore[return-value]
     conn = sqlite3.connect(db_path(), timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")

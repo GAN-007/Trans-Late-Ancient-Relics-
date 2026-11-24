@@ -41,6 +41,7 @@
   <button data-tab="learn">Learn</button>
   <button data-tab="dictionary">Dictionary</button>
   <button data-tab="script">Script Lab</button>
+  <button data-tab="research">Research</button>
   <button data-tab="knowledge">Knowledge</button>
   <button data-tab="about">About</button>
 </nav>
@@ -469,6 +470,61 @@
       </article>
     </div>
     <article class="card signs-card"><h3>Core one-consonant signs</h3><div id="signTable" class="tablewrap"></div></article>
+  </section>
+
+  <section id="research" class="tab research" aria-labelledby="researchTitle">
+    <h2 id="researchTitle" class="visually-spaced">Research tools</h2>
+    <p class="muted">Source-attested tools for epigraphers: every result names its source (Unicode Unikemet, Thesaurus Linguae Aegyptiae, Comprehensive Coptic Lexicon) and its limits.</p>
+    <div class="grid two">
+      <article class="card">
+        <div class="section-kicker">SIGN CATALOG · UNIKEMET</div>
+        <h3>Sign lookup</h3>
+        <label for="signQuery">Gardiner code, glyph or phonetic value</label>
+        <div class="row"><input id="signQuery" value="F35"><button id="signLookupBtn">Look up</button></div>
+        <div id="signResult" class="output"></div>
+      </article>
+      <article class="card">
+        <div class="section-kicker">QUADRATS · MdC / UNICODE CONTROLS</div>
+        <h3>Group renderer</h3>
+        <label for="quadratInput">Manuel de Codage or Unicode hieroglyphs</label>
+        <input id="quadratInput" value="<ra-mn-xpr> nfr:r-f">
+        <div class="row"><select id="quadratDir" aria-label="Writing direction"><option value="ltr">Left to right</option><option value="rtl">Right to left</option></select><button id="quadratBtn">Render</button></div>
+        <div id="quadratSvg" class="output quadrat-svg"></div>
+        <div id="quadratInfo" class="output"></div>
+      </article>
+      <article class="card">
+        <div class="section-kicker">COPTIC · LATEST STAGE, WITH VOWELS</div>
+        <h3>Coptic reader</h3>
+        <label for="copticInput">Sahidic Coptic</label>
+        <input id="copticInput" value="ⲡⲣⲱⲙⲉ ⲛⲟⲩⲧⲉ">
+        <div class="row"><button id="copticBtn">Read</button></div>
+        <label for="vocalInput">Egyptian word → Coptic descendant</label>
+        <div class="row"><input id="vocalInput" value="rmṯ"><button id="vocalBtn" class="secondary">Find vocalization</button></div>
+        <div id="copticOutput" class="output"></div>
+      </article>
+      <article class="card">
+        <div class="section-kicker">RESTORATION · LEIDEN</div>
+        <h3>Damaged text</h3>
+        <label for="restoreInput">Transliteration with gaps: [...] lost, [2] two words, n[...] partial</label>
+        <div class="row"><input id="restoreInput" value="ḥtp dj [...] wsjr"><button id="restoreBtn">Restore</button></div>
+        <div id="restoreOutput" class="output"></div>
+      </article>
+      <article class="card">
+        <div class="section-kicker">PERIOD GRAMMAR</div>
+        <h3>Which stage of Egyptian is this?</h3>
+        <label for="periodInput">Transliteration</label>
+        <input id="periodInput" value="sḏm.n=f">
+        <div class="row"><select id="periodStage" aria-label="Claimed period"><option value="">No claimed period</option><option value="old_egyptian">Old Egyptian</option><option value="middle_egyptian">Middle Egyptian</option><option value="late_egyptian" selected>Late Egyptian</option><option value="demotic">Demotic</option><option value="coptic">Coptic</option></select><button id="periodBtn">Check</button></div>
+        <div id="periodOutput" class="output"></div>
+      </article>
+      <article class="card">
+        <div class="section-kicker">ATTESTATIONS</div>
+        <h3>Corpus search</h3>
+        <label for="corpusQuery">Lemma, transliteration or meaning</label>
+        <div class="row"><input id="corpusQuery" value="ḥtp"><button id="corpusBtn">Search</button></div>
+        <div id="corpusOutput" class="output"></div>
+      </article>
+    </div>
   </section>
 
   <section id="knowledge" class="tab" aria-labelledby="knowledgeTitle">

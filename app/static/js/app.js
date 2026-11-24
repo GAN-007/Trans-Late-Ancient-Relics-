@@ -7,6 +7,7 @@ import {initLens} from './lens.js';
 import {initTalk} from './talk.js';
 import {initLearn} from './learn.js';
 import {initAccount} from './account.js';
+import {initResearch} from './research.js';
 import {onUserChanged} from './core.js';
 
 function markV3(){
@@ -21,7 +22,7 @@ function markV3(){
 
 async function boot(){
   try{
-    markV3();initTabs();initTranslate();initUniversal();initLens();initTalk();initAccount();onUserChanged(syncTranslateAuth);
+    markV3();initTabs();initTranslate();initUniversal();initLens();initTalk();initAccount();initResearch();onUserChanged(syncTranslateAuth);
     initAvatarChat();
     await Promise.all([loadCapabilities(),refreshUser(),initLearn(),initLadder()]);
   }catch(error){toast(`Startup warning: ${error.message}`);}

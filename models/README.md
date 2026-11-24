@@ -76,3 +76,23 @@ Do not replace `relic_detector.onnx` automatically when a correction count thres
 7. staged rollout with rollback.
 
 The active-learning APIs export reviewed correction metadata for a future training pipeline, but model training/promotion is intentionally external and governed.
+
+## Training, benchmark and registry
+
+`scripts/train_vision.py` fine-tunes a sign classifier on a licensed dataset (MMM or MEH, CC BY-SA 4.0) with an
+artifact-level split, calibrates it, evaluates it on the held-out monuments and exports `model.onnx`, `classes.json` and
+`model_card.json`. It needs PyTorch and a GPU and is not part of the server install.
+
+```bash
+pip install torch torchvision pillow onnx
+python scripts/train_vision.py --data /data/MMM --source mmm --out models/sign_classifier
+python cli.py evaluate vision --model models/sign_classifier/model.onnx \
+    --classes models/sign_classifier/classes.json --manifest manifest.jsonl --split test
+python cli.py models register models/sign_classifier/model.onnx --name sign-classifier \
+    --dataset mmm --license "CC BY-SA 4.0" --metrics report.json
+python cli.py models approve 1 --actor curator   # refused below top-1 0.80 or above ECE 0.10
+python cli.py models deploy 1 --actor curator
+```
+
+The registry stores each file in the object store by its SHA-256, keeps every version, allows one deployed version per
+name, and writes every change to the audit log. Datasets without a stated licence cannot be approved.

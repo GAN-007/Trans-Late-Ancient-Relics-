@@ -119,7 +119,10 @@ class Batch:
                 if rows:
                     marks = ",".join("?" * len(rows[0]))
                     conn.executemany(f"INSERT INTO {table} VALUES ({marks})", rows)
-        return {table: len(rows) for table, rows in self.rows.items() if rows}
+        counts = {table: len(rows) for table, rows in self.rows.items() if rows}
+        from ..storage import audit
+        audit.record("system", "corpus.import", sid, {"title": self.source["title"], "counts": counts})
+        return counts
 
 
 # ------------------------------------------------------------------ TLA
@@ -179,7 +182,8 @@ def _tla_docs(paths: Iterable[str]) -> Iterator[dict[str, Any]]:
             yield doc
 
 
-def _expand(path: str) -> list[str]:
+def _expand(path: str | os.PathLike) -> list[str]:
+    path = os.fspath(path)
     if os.path.isdir(path):
         return sorted(glob.glob(os.path.join(path, "**", "*.json"), recursive=True)
                       + glob.glob(os.path.join(path, "**", "*.jsonl*"), recursive=True))

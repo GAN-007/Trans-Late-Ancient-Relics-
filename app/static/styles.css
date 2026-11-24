@@ -188,3 +188,5 @@ button,input,textarea,select{font-family:inherit}
 .avatar-reading.quiz .avatar-word:not(.answered) .avatar-word-say,
 .avatar-reading.quiz .avatar-word:not(.answered) .avatar-word-meaning{visibility:hidden}
 .avatar-reading.quiz .avatar-reading-signs{display:none}
+.quadrat-svg{overflow-x:auto;color:var(--ink)}.quadrat-svg svg{max-width:100%;height:auto;fill:currentColor}
+.research .output{white-space:normal}.research .output>div+div{margin-top:4px}

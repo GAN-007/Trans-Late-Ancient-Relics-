@@ -42,6 +42,20 @@ All secrets are server-side environment variables. The browser never receives AP
 | `ESHB_AZURE_VOICE_THEO` | `en-GB-RyanNeural` | Theo's English Azure voice |
 | `ESHB_WARMUP` | true | build translation and reading indexes in the background at startup |
 
+## Database, object storage and audit
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `ESHB_DATABASE_URL` | — (SQLite at `ESHB_DB_PATH`) | `postgresql://user:pass@host:5432/db` to share one database between several app servers; needs `pip install -r requirements-postgres.txt` |
+| `ESHB_DATABASE_SCHEMA` | `public` | PostgreSQL schema (`search_path`); the tests use one schema per test |
+| `ESHB_OBJECT_STORE` | `local` | `local` or `s3` for uploaded images and model files |
+| `ESHB_OBJECT_DIR` | `<runtime>/objects` | folder for the local object store |
+| `ESHB_S3_BUCKET` | — | bucket for the S3 object store (credentials from the standard AWS variables or instance role) |
+| `ESHB_S3_ENDPOINT_URL` | AWS | S3-compatible endpoint, e.g. MinIO or Ceph |
+| `ESHB_S3_PREFIX` | none | optional key prefix inside the bucket |
+
+Migrations run at startup and with `python cli.py migrate`. The audit log is hash-chained; `python cli.py audit verify` or `GET /api/admin/audit` checks it.
+
 ## Production
 
 Use HTTPS. Set:

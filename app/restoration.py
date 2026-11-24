@@ -159,7 +159,8 @@ def _distribution(scored: list[tuple[str, float, str]], unseen: float, top: int)
     probs = [(w, (1 - unseen) * p / total, ev) for w, p, ev in scored]
     probs.sort(key=lambda x: -x[1])
     entropy = -sum(p * math.log2(p) for _, p, _ in probs if p > 0) - (unseen * math.log2(unseen) if unseen > 0 else 0)
-    best = probs[:top]
+    # candidates below half a percent are noise for a reader; their mass stays in "other"
+    best = [x for x in probs[:top] if x[1] >= 0.005] or probs[:1]
     return {"candidates": [{"text": w, "probability": round(p, 4), "evidence": ev} for w, p, ev in best],
             "other": round(1 - sum(p for _, p, _ in best), 4), "entropy_bits": round(entropy, 3)}
 

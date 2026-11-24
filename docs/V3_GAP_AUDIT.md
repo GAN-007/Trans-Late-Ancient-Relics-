@@ -557,3 +557,20 @@ PostgreSQL, object storage, immutable audit log, DOI/object IDs, reviewer assign
 v3 can provide a real-time **translation assistance workflow**: capture/stream a frame, identify sign candidates when a configured vision backend exists, expose candidate sign functions/readings, surface uncertainty, translate reviewed known material, speak pedagogical output, accept human corrections and preserve a governed path toward better models.
 
 v3 does **not** claim that arbitrary damaged Ancient Egyptian can already be translated with Egyptologist-level reliability from a camera. Achieving that requires the research assets listed above. The architecture now makes those missing assets explicit and gives them safe integration points instead of masking them with fluent but unsupported output.
+
+
+# 10. Research layers built after v3
+
+Every priority in section 8 now has working, tested code. See [`RESEARCH_LAYERS.md`](RESEARCH_LAYERS.md) for details and limits.
+
+| Priority | Built in | Remaining outside input |
+|---|---|---|
+| 0 — scholarly data model | `app/corpus/` (attestations with object, line, date) | Import of the full TLA corpus |
+| 1 — corpus-backed morphology/syntax | `app/periods.py` (stage diagnostics, TLA gloss reader) | Full corpus-trained parser |
+| 2 — sign catalog + quadrat engine | `app/signs.py`, `app/quadrat.py` | Font glyphs for Extended-A |
+| 3 — epigraphic vision model | `app/vision_bench.py`, `scripts/train_vision.py`, model registry gates | GPU training run on MMM/MEH |
+| 4 — historical phonology | `app/coptic.py`, Egyptian→Coptic etymologies | More specialist-reviewed pairs |
+| 5 — hieratic, Demotic, Coptic | `app/script_stages.py`, Coptic lexicon and reader | Demotic lexical data |
+| 6 — institutional workflow | `app/storage/` (PostgreSQL, object store, audit, registry) | — |
+| Restoration | `app/restoration.py` | Held-out evaluation |
+| EN/SW evaluation | `app/translation_eval.py` | Expert-reviewed references |

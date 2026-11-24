@@ -1,4 +1,4 @@
-const CACHE = 'ancient-relics-v3-akkadian-phonetics-20261124';
+const CACHE = 'ancient-relics-v3-research-layers-20261124';
 const SHELL = [
   '/',
   '/manifest.webmanifest',
@@ -17,6 +17,7 @@ const SHELL = [
   '/static/js/talk.js',
   '/static/js/learn.js',
   '/static/js/account.js',
+  '/static/js/research.js',
 ];
 
 self.addEventListener('install', event => {

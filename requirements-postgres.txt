@@ -1,0 +1,4 @@
+-r requirements.txt
+# PostgreSQL and S3-compatible object storage for multi-node installs
+psycopg[binary]>=3.1,<4.0
+boto3>=1.34,<2.0
