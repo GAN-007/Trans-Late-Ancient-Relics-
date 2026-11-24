@@ -1,0 +1,112 @@
+{
+ "name": "Trans-Late artifact benchmark (seed)",
+ "version": "0.1",
+ "reference_policy": "Reference statuses: 'expert' = checked by an Egyptologist and a translator into the target language; 'tla-draft' = English/Swahili drafted from the TLA's published German translation, awaiting review; 'teaching' = the app's reviewed lesson glosses on composite teaching sentences (not single monuments). Report scores by status; only 'expert' references support claims about translation quality. Add artifacts with full provenance and expert references to grow it.",
+ "artifacts": [
+  {
+   "id": "tla:CDWYGHBII5C37IBETSSI6RCIDQ",
+   "title": "oBrussels E 3209, spell 2",
+   "provenance": {
+    "object": "Ostracon, limestone",
+    "museum": "Musées Royaux d'Art et d'Histoire, Brussels",
+    "inventory": "E 3209",
+    "findspot": "Deir el-Medina",
+    "date": "19th Dynasty (c. 1292-1191 BCE)",
+    "script": "New Hieratic",
+    "source": "Thesaurus Linguae Aegyptiae (CC BY-SA 4.0); van de Walle, CdE 42 (1967) 13-29"
+   },
+   "language": "late_egyptian",
+   "lines": [
+    {
+     "line": "spell 2",
+     "input": "k.t znf n msw.t tp.t n.t ꜥrry.t",
+     "reference_de": "Weiter: Blut der ersten Geburt der Kobra!",
+     "reference_english": "Another (remedy): blood of the first birth of the cobra!",
+     "reference_swahili": "Nyingine (dawa): damu ya uzazi wa kwanza wa fira!",
+     "reference_status": "tla-draft"
+    }
+   ]
+  },
+  {
+   "id": "tla:2SQY75KWF5HUXBJCDHOUZPKT3E",
+   "title": "Papyrus Ebers 758 (90,11)",
+   "provenance": {
+    "object": "Papyrus roll",
+    "museum": "Universitätsbibliothek Leipzig (Bibliotheca Albertina)",
+    "inventory": "Papyrus Ebers",
+    "date": "late 17th / early 18th Dynasty (c. 1550 BCE)",
+    "script": "Hieratic",
+    "source": "Thesaurus Linguae Aegyptiae (CC BY-SA 4.0)"
+   },
+   "language": "middle_egyptian",
+   "lines": [
+    {
+     "line": "90,11",
+     "input": "wt ḥr.s",
+     "reference_de": "(Die Körperhälfte) werde darüber verbunden.",
+     "reference_english": "(The half of the body) is to be bandaged over it.",
+     "reference_swahili": "(Nusu ya mwili) ifungwe juu yake.",
+     "reference_status": "tla-draft"
+    },
+    {
+     "line": "59,1 (Eb 365)",
+     "input": "rdj m ẖnw jr.t",
+     "reference_de": "Werde ins Innere des Auges gegeben.",
+     "reference_english": "To be put into the inside of the eye.",
+     "reference_swahili": "Iwekwe ndani ya jicho.",
+     "reference_status": "tla-draft"
+    }
+   ]
+  },
+  {
+   "id": "composite:offering-formula",
+   "title": "Offering formula (composite teaching text)",
+   "provenance": {
+    "object": "composite of the standard formula on Middle Kingdom stelae and coffins",
+    "source": "Gardiner, Egyptian Grammar, Excursus B"
+   },
+   "language": "middle_egyptian",
+   "lines": [
+    {
+     "line": "1",
+     "input": "ḥtp dj nswt",
+     "reference_english": "An offering that the king gives",
+     "reference_swahili": "Sadaka ambayo mfalme anatoa",
+     "reference_status": "teaching"
+    },
+    {
+     "line": "2",
+     "input": "ꜥnḫ wḏꜣ snb",
+     "reference_english": "life, prosperity, health",
+     "reference_swahili": "uhai, ustawi, afya",
+     "reference_status": "teaching"
+    }
+   ]
+  },
+  {
+   "id": "composite:lessons",
+   "title": "Lesson sentences (composite teaching text)",
+   "provenance": {
+    "object": "app lessons 8-15",
+    "source": "Trans-Late Ancient Relics lesson set"
+   },
+   "language": "middle_egyptian",
+   "lines": [
+    {
+     "line": "1",
+     "input": "jnk sš",
+     "reference_english": "I am a scribe",
+     "reference_swahili": "Mimi ni mwandishi",
+     "reference_status": "teaching"
+    },
+    {
+     "line": "2",
+     "input": "pr nfr",
+     "reference_english": "a good house",
+     "reference_swahili": "nyumba nzuri",
+     "reference_status": "teaching"
+    }
+   ]
+  }
+ ]
+}

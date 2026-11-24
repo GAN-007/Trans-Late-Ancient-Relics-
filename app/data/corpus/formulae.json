@@ -1,0 +1,80 @@
+{
+ "basis": "Standard Middle Egyptian formulae as taught in A. H. Gardiner, Egyptian Grammar (3rd ed. 1957), Excursus B (the offering formula) and §§ on royal titulary, and J. P. Allen, Middle Egyptian (3rd ed. 2014), Lessons 6 and 24. These are composite teaching forms, not quotations of single monuments.",
+ "phrases": [
+  {
+   "text": "ḥtp dj nswt wsjr nb ḏdw nṯr ꜥꜣ nb ꜣbḏw",
+   "english": "An offering that the king gives (to) Osiris, lord of Busiris, great god, lord of Abydos",
+   "swahili": "Sadaka ambayo mfalme anatoa (kwa) Osiris, bwana wa Busiris, mungu mkuu, bwana wa Abydos"
+  },
+  {
+   "text": "ḥtp dj nswt jnpw tpj ḏw.f",
+   "english": "An offering that the king gives (to) Anubis who is upon his mountain",
+   "swahili": "Sadaka ambayo mfalme anatoa (kwa) Anubis aliye juu ya mlima wake"
+  },
+  {
+   "text": "dj.f prt-ḫrw t ḥnqt kꜣ ꜣpd šs mnḫt ḫt nb nfr wꜥb",
+   "english": "that he may give an invocation offering of bread, beer, cattle, fowl, alabaster, linen and every good and pure thing",
+   "swahili": "ili atoe sadaka ya kuitwa: mkate, bia, ng'ombe, ndege, alabasta, kitani na kila kitu kizuri na safi"
+  },
+  {
+   "text": "ḫt nb nfr wꜥb ꜥnḫ nṯr jm",
+   "english": "every good and pure thing on which a god lives",
+   "swahili": "kila kitu kizuri na safi ambacho mungu huishi kwacho"
+  },
+  {
+   "text": "n kꜣ n jmꜣḫ",
+   "english": "for the ka of the revered one",
+   "swahili": "kwa ajili ya ka ya mheshimiwa"
+  },
+  {
+   "text": "n kꜣ n jmꜣḫ ḫr nṯr ꜥꜣ",
+   "english": "for the ka of the one revered before the great god",
+   "swahili": "kwa ajili ya ka ya mheshimiwa mbele ya mungu mkuu"
+  },
+  {
+   "text": "ꜥnḫ wḏꜣ snb",
+   "english": "life, prosperity, health",
+   "swahili": "uhai, ustawi, afya"
+  },
+  {
+   "text": "dj ꜥnḫ ḏd wꜣs ḏt",
+   "english": "given life, stability and dominion forever",
+   "swahili": "aliyepewa uhai, uthabiti na mamlaka milele"
+  },
+  {
+   "text": "dj ꜥnḫ mj rꜥ ḏt",
+   "english": "given life like Re forever",
+   "swahili": "aliyepewa uhai kama Ra milele"
+  },
+  {
+   "text": "nswt-bjtj nb tꜣwj",
+   "english": "dual king, lord of the two lands",
+   "swahili": "mfalme wa Misri ya Juu na ya Chini, bwana wa nchi mbili"
+  },
+  {
+   "text": "sꜣ rꜥ nb ḫꜥw",
+   "english": "son of Re, lord of appearances",
+   "swahili": "mwana wa Ra, bwana wa kutokea kwa utukufu"
+  },
+  {
+   "text": "mꜣꜥ-ḫrw",
+   "english": "true of voice (justified)",
+   "swahili": "mkweli wa sauti (aliyehesabiwa haki)"
+  },
+  {
+   "text": "jmꜣḫ ḫr wsjr",
+   "english": "revered before Osiris",
+   "swahili": "mheshimiwa mbele ya Osiris"
+  },
+  {
+   "text": "ḥtp dj nswt",
+   "english": "An offering that the king gives",
+   "swahili": "Sadaka ambayo mfalme anatoa"
+  },
+  {
+   "text": "prt-ḫrw",
+   "english": "invocation offering (lit. 'going forth of the voice')",
+   "swahili": "sadaka ya kuitwa (kihalisi 'kutoka kwa sauti')"
+  }
+ ]
+}

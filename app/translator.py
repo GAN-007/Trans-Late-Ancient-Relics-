@@ -217,12 +217,46 @@ def translate_phrase(text: str, source: str) -> dict:
     }
 
 
+def _formulae() -> list[dict]:
+    import json
+    from pathlib import Path
+    path = Path(__file__).resolve().parent / "data" / "corpus" / "formulae.json"
+    phrases = json.loads(path.read_text(encoding="utf-8"))["phrases"]
+    return sorted(phrases, key=lambda p: -len(p["text"].split()))
+
+
+def _formula_key(word: str) -> str:
+    return _normalize(word).replace("=", ".").replace("i̯", "j")
+
+
 def egyptian_to_modern(transliteration: str, target: str="english") -> dict:
     words = [w for w in re.split(r"\s+", transliteration.strip()) if w]
     output = []
     ambiguity = []
+    formulae_used = []
     lexicon = current_lexicon()
-    for word in words:
+    # Standard formulae (offering formula, royal epithets) are idioms: translate them as units, longest first.
+    keys = [_formula_key(w) for w in words]
+    covered: dict[int, tuple[int, dict]] = {}
+    i = 0
+    while i < len(words):
+        for phrase in _formulae():
+            parts = [_formula_key(w) for w in phrase["text"].split()]
+            if keys[i:i + len(parts)] == parts and phrase.get(target):
+                covered[i] = (len(parts), phrase)
+                i += len(parts) - 1
+                break
+        i += 1
+    skip_until = -1
+    for index, word in enumerate(words):
+        if index < skip_until:
+            continue
+        if index in covered:
+            length, phrase = covered[index]
+            output.append(phrase[target])
+            formulae_used.append({"text": phrase["text"], "translation": phrase[target]})
+            skip_until = index + length
+            continue
         base = word.split(".")[0]
         matches = [e for e in lexicon if e["transliteration"].lower() == base.lower()]
         if not matches:
@@ -240,5 +274,6 @@ def egyptian_to_modern(transliteration: str, target: str="english") -> dict:
         "target_language":target,
         "literal_gloss":" ".join(output),
         "ambiguity":ambiguity,
+        "formulae": formulae_used,
         "warning":"This is a lexical gloss. A proper historical translation requires morphological and syntactic parsing before choosing final English/Swahili wording.",
     }

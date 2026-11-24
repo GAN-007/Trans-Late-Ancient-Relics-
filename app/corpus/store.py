@@ -270,7 +270,7 @@ def _tla_text_or_object(batch: Batch, doc: dict[str, Any], sid: str, span: tuple
 
 def _tla_sentence(batch: Batch, doc: dict[str, Any], sid: str, texts: dict[str, tuple]) -> None:
     context = doc.get("context") or {}
-    tokens = doc.get("tokens") or []
+    tokens = [t for t in doc.get("tokens") or [] if t.get("type", "word") == "word"]  # skip line/column markers
     translit = (doc.get("transcription") or {}).get("unicode") or " ".join(
         (t.get("transcription") or {}).get("unicode") or t.get("label") or "" for t in tokens).strip()
     glyphs = doc.get("glyphs") if isinstance(doc.get("glyphs"), str) else (doc.get("glyphs") or {}).get("mdc")
@@ -463,7 +463,10 @@ def attestations(lemma_id: str, limit: int = 50) -> list[dict[str, Any]]:
                     COALESCE(s.date_to, t.date_to) AS date_to, a.source_id
                     FROM corpus_attestations a JOIN corpus_sentences s ON s.id=a.sentence_id
                     LEFT JOIN corpus_texts t ON t.id=s.text_id WHERE a.lemma_id=? LIMIT ?""", (lemma_id, limit))
+    from ..periods import explain_gloss
     for row in rows:
         row["translations"] = json.loads(row["translations"]) if row.get("translations") else {}
+        if row.get("gloss"):
+            row["grammar"] = explain_gloss(row["gloss"])["reading"]
         row["dates"] = chronology.describe(row.pop("date_from"), row.pop("date_to"))
     return rows

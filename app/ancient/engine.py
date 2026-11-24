@@ -114,6 +114,15 @@ def translate(text: str, source: str, target: str | list[str] = "all") -> dict[s
             f"{len(nouns())}-noun, {len(verbs())}-verb concept lexicon."
         )
         return response
+    if source in {"middle_egyptian", "old_egyptian"}:
+        from ..translator import egyptian_to_modern
+        formula = egyptian_to_modern(text, "english")
+        if formula.get("formulae"):
+            used = formula["formulae"]
+            response["formulae"] = used
+            response["parse"]["notes"].append("Contains a standard formula, read as a unit: " + "; ".join(
+                f"{f['text']} = '{f['translation']}'" for f in used) + ". The word-by-word sentence below is a grammatical "
+                "exercise and may not match the formula's idiomatic meaning.")
     left_out = [f"'{w}'" for w in dict.fromkeys(parsed["unknown"])] + parsed.get("dropped", [])
     # Never translate part of a sentence silently: say exactly what was left out.
     response["complete"] = not left_out

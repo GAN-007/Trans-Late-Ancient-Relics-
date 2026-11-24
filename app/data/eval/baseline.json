@@ -1,0 +1,23 @@
+{
+ "system": "app",
+ "benchmark_version": "0.1",
+ "summary": {
+  "english": {
+   "artifacts": 4,
+   "chrf_mean_over_artifacts": 46.27,
+   "chrf_pp_mean_over_artifacts": 45.72,
+   "coverage": 1.0,
+   "exact_match": 0.375,
+   "artifacts_with_expert_references": 0
+  },
+  "swahili": {
+   "artifacts": 4,
+   "chrf_mean_over_artifacts": 55.78,
+   "chrf_pp_mean_over_artifacts": 55.05,
+   "coverage": 1.0,
+   "exact_match": 0.5,
+   "artifacts_with_expert_references": 0
+  }
+ },
+ "note": "Regression floor for CI; scores may only go up. Measured on seed references (tla-draft and teaching), not expert references."
+}

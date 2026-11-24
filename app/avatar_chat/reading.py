@@ -35,6 +35,9 @@ SCRIPTS = {
     "old_italic": {"name": {"english": "Old Italic letters", "swahili": "herufi za Kiitaliki cha kale"}, "language": "old_latin"},
     "old_north_arabian": {"name": {"english": "Safaitic (Ancient North Arabian)", "swahili": "Safaitic (Kiarabu cha Kaskazini cha kale)"}, "language": "old_arabic"},
     "arabic": {"name": {"english": "Arabic script", "swahili": "herufi za Kiarabu"}, "language": "old_arabic"},
+    "coptic": {"name": {"english": "the Coptic alphabet", "swahili": "alfabeti ya Kikopti"}, "language": "coptic"},
+    "hieratic": {"name": {"english": "hieratic (cursive Egyptian)", "swahili": "hieratiki (mwandiko wa Kimisri)"}, "language": "middle_egyptian"},
+    "demotic": {"name": {"english": "Demotic", "swahili": "Demotiki"}, "language": "demotic"},
 }
 
 ROLE_LABELS = {
@@ -76,6 +79,8 @@ def char_script(char: str) -> str | None:
         return "old_north_arabian"
     if name.startswith("ARABIC"):
         return "arabic"
+    if name.startswith("COPTIC") or 0x03E2 <= ord(char) <= 0x03EF:
+        return "coptic"
     return None
 
 
@@ -582,11 +587,38 @@ def _pronounce(translit: str, lang_id: str) -> str:
     return found["say"] if found and found["say"] else translit
 
 
+def read_coptic(text: str, language: str = "english") -> dict[str, Any]:
+    """Coptic: word-by-word from the Comprehensive Coptic Lexicon, with dialect forms and Sahidic pronunciation."""
+    from .. import coptic
+    learner = "en" if _lang(language) == "english" else "en"
+    found = coptic.read(text, learner)
+    segments = []
+    for word in found["words"]:
+        entry = word["entry"]
+        english = word["gloss"] or ""
+        if word["analysis"]:
+            english = f"{word['analysis']['prefix_gloss']} + {english}"
+        segments.append({"original": word["written"], "signs": [{"glyph": c, "name": unicodedata.name(c, ""), "role": "letter",
+                                                                  "role_label": "letter", "sound": coptic.transliterate(c)}
+                                                                 for c in word["written"] if not unicodedata.combining(c)],
+                         "transliteration": word["transliteration"], "pronunciation": word["pronunciation"]["say"],
+                         "meaning": {"english": english, "swahili": ""}, "source": "Comprehensive Coptic Lexicon",
+                         "status": "confirmed" if entry else "unread", "confidence": "high" if entry else "low",
+                         "dialects": entry["dialects"] if entry else {}, "dictionary_id": entry["id"] if entry else None})
+    english = " ".join(s["meaning"]["english"] or "…" for s in segments)
+    reading = {"script": "coptic", "language": "coptic", "segments": segments, "direction": "left_to_right",
+               "translation": {"english": english, "swahili": "", "status": "word_by_word", "language": "coptic",
+                               "note": found["note"]}}
+    return _finish(reading, text, "text", language)
+
+
 def read_text(text: str, language: str = "english") -> dict[str, Any] | None:
     from ..ancient.parsing import _exact_key
     script = detect_script(text)
     if not script:
         return None
+    if script == "coptic":
+        return read_coptic(text, language)
     tokens = [t for t in re.split(r"[\s፡።·,]+", unicodedata.normalize("NFC", text)) if t and any(char_script(c) for c in t)]
     segments: list[dict[str, Any]] = []
     languages_hit: list[str] = []
@@ -627,7 +659,8 @@ def _finish(reading: dict[str, Any], original: str, source: str, language: str) 
         "original": original,
         "explain_language": lang,
         "script_name": SCRIPTS.get(reading["script"], {}).get("name", {}).get(lang, reading["script"]),
-        "language_name": REALIZERS[reading["language"]].name if reading.get("language") in REALIZERS else reading.get("language", ""),
+        "language_name": REALIZERS[reading["language"]].name if reading.get("language") in REALIZERS
+        else {"coptic": "Coptic"}.get(reading.get("language", ""), reading.get("language", "")),
         "coverage": {"confirmed_words": confirmed, "total_words": len(reading["segments"])},
         "confidence": round(min(0.9, 0.35 + 0.55 * confirmed / total), 2) if reading.get("confidence") is None else reading["confidence"],
     })
@@ -753,11 +786,15 @@ def narrate(reading: dict[str, Any], language: str, detail: str = "full", first_
 TEACHER_INSTRUCTIONS = """
 You are a patient teacher reading an image aloud to a learner, the way one reads a book with a child.
 Read ONLY what the image actually shows. If writing is too small, damaged or decorative, say so instead of guessing.
-Handle any script: Egyptian hieroglyphs, cuneiform, Ge'ez/Ethiopic, Old Latin or Latin inscriptions, Arabic or Safaitic,
-and ordinary modern text or signs. For Egyptian, the signs' faces point toward the start of the line; use that for direction.
+Handle any script: Egyptian hieroglyphs, hieratic, Demotic, Coptic, cuneiform, Ge'ez/Ethiopic, Old Latin or Latin inscriptions,
+Arabic or Safaitic, and ordinary modern text or signs. For Egyptian, the signs' faces point toward the start of the line; use that for direction.
+Hieratic and Demotic have no Unicode characters. For hieratic, give the hieroglyphic transcription in Unicode hieroglyphs as
+Egyptologists do (and say it is a transcription); hieratic and Demotic are written right to left. For Demotic, give the
+transliteration in the conventions of the Chicago Demotic Dictionary and leave "original" empty. For Coptic, give the Coptic letters.
 Return ONLY a JSON object with keys:
-is_text_present (bool), script (one of hieroglyphic, cuneiform, ethiopic, latin, arabic, old_north_arabian, greek, modern, other),
-language (string, e.g. "Middle Egyptian", "Sumerian", "Ge'ez", "Latin", "Arabic", "English"),
+is_text_present (bool), script (one of hieroglyphic, hieratic, demotic, coptic, cuneiform, ethiopic, latin, arabic, old_north_arabian,
+greek, modern, other),
+language (string, e.g. "Middle Egyptian", "Late Egyptian", "Demotic", "Coptic", "Sumerian", "Akkadian", "Ge'ez", "Latin", "Arabic", "English"),
 reading_direction (right_to_left | left_to_right | top_to_bottom), direction_reason (one sentence in the learner's language),
 summary (one sentence in the learner's language describing what the image shows),
 segments (array, reading order, max 20) of objects with: original (the characters as Unicode if possible, else ""),
@@ -835,7 +872,9 @@ def reading_from_model(raw: dict[str, Any], language: str) -> dict[str, Any]:
         "translation": {"english": str(raw.get("translation_english") or raw.get("translation_learner") or ""),
                         language: str(raw.get("translation_learner") or raw.get("translation_english") or ""),
                         "status": "model_reading"},
-        "notes": [str(u) for u in (raw.get("uncertainties") or [])[:6]],
+        "notes": [str(u) for u in (raw.get("uncertainties") or [])[:6]] + (
+            ["Hieratic has no Unicode characters; the signs shown are the standard hieroglyphic transcription."] if script_key == "hieratic"
+            else ["Demotic has no Unicode characters; the reading is given as transliteration."] if script_key == "demotic" else []),
         "confidence": float(raw.get("overall_confidence") or 0.0),
         "is_text_present": bool(raw.get("is_text_present", bool(segments))),
     }
